@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   createSession,
+  getReport,
+  getSession,
   type CreateSessionInput,
   type Report,
   type SessionView,
@@ -15,17 +17,69 @@ import { InterviewRoom } from './screens/InterviewRoom';
 import { WrapUpScreen } from './screens/WrapUpScreen';
 import './screens/screens.css';
 
-type Screen = 'start' | 'briefing' | 'miccheck' | 'meet' | 'interview' | 'wrapup' | 'report';
+type Screen =
+  | 'restoring'
+  | 'start'
+  | 'briefing'
+  | 'miccheck'
+  | 'meet'
+  | 'interview'
+  | 'wrapup'
+  | 'report';
+
+const STORED_ID = 'interview.sessionId';
+const STORED_MIC = 'interview.micWorks';
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>('start');
+  const [screen, setScreen] = useState<Screen>(() =>
+    sessionStorage.getItem(STORED_ID) ? 'restoring' : 'start',
+  );
   const [session, setSession] = useState<SessionView | null>(null);
-  const [micWorks, setMicWorks] = useState(false);
+  const [resumed, setResumed] = useState(false);
+  const [micWorks, setMicWorks] = useState(sessionStorage.getItem(STORED_MIC) === '1');
   const [closingLine, setClosingLine] = useState('');
   const [report, setReport] = useState<Report | null>(null);
   const [creating, setCreating] = useState(false);
   const [startError, setStartError] = useState('');
   const [lastInput, setLastInput] = useState<CreateSessionInput | undefined>(undefined);
+
+  // Refresh mid-interview: the server is the source of truth, so we just
+  // re-fetch the session and drop the student back at the current question
+  // (or their report, if the interview already ended).
+  useEffect(() => {
+    const id = sessionStorage.getItem(STORED_ID);
+    if (!id || screen !== 'restoring') return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const s = await getSession(id);
+        if (cancelled) return;
+        setSession(s);
+        if (s.status === 'active') {
+          setResumed(true);
+          setScreen('interview');
+        } else {
+          const r = await getReport(id);
+          if (cancelled) return;
+          if (r.status === 'ready') {
+            setReport(r.report);
+            setScreen('report');
+          } else {
+            setClosingLine('Welcome back!');
+            setScreen('wrapup');
+          }
+        }
+      } catch {
+        if (!cancelled) {
+          sessionStorage.removeItem(STORED_ID);
+          setScreen('start');
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [screen]);
 
   async function handleStart(input: CreateSessionInput) {
     setCreating(true);
@@ -34,8 +88,10 @@ export default function App() {
     void preloadTts();
     try {
       const s = await createSession(input);
+      sessionStorage.setItem(STORED_ID, s.id);
       setSession(s);
       setReport(null);
+      setResumed(false);
       setScreen('briefing');
     } catch (err) {
       setStartError(
@@ -47,6 +103,12 @@ export default function App() {
   }
 
   switch (screen) {
+    case 'restoring':
+      return (
+        <main className="screen screen-center enter">
+          <p className="screen-sub">Picking up where you left off…</p>
+        </main>
+      );
     case 'start':
       return (
         <StartScreen
@@ -66,6 +128,7 @@ export default function App() {
           interviewerName={session.interviewerName}
           onContinue={(ok) => {
             setMicWorks(ok);
+            sessionStorage.setItem(STORED_MIC, ok ? '1' : '0');
             setScreen('meet');
           }}
         />
@@ -77,6 +140,7 @@ export default function App() {
         <InterviewRoom
           session={session}
           micWorks={micWorks}
+          resumed={resumed}
           onFinished={(line) => {
             setClosingLine(line);
             setScreen('wrapup');
@@ -99,7 +163,10 @@ export default function App() {
         <ReportScreen
           report={report}
           interviewerName={session.interviewerName}
-          onRestart={() => setScreen('start')}
+          onRestart={() => {
+            sessionStorage.removeItem(STORED_ID);
+            setScreen('start');
+          }}
         />
       ) : null;
   }

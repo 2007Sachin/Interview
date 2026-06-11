@@ -127,3 +127,26 @@ npm run build
 4. Refresh-resilience of the report itself comes in Stage 4; for now verify the report also
    persisted server-side: the session JSON under `v2/server/data/sessions/` contains a
    `report` object.
+
+### Stage 4 — reliability & edge cases
+
+Simulate each failure and confirm the recovery path (no dead-end screens anywhere):
+
+1. **Mic permission denied**: block the mic in browser site settings, then go through the
+   mic check — you get clear unblock instructions plus a "Continue — I'll type my answers"
+   path. Inside the interview, clicking **Answer** with a blocked mic opens the type-instead
+   panel automatically.
+2. **Audio upload failure**: stop the backend (`Ctrl+C` in the server terminal) mid-interview,
+   record an answer — the client auto-retries once, then keeps your clip and shows a
+   **Try again** button. Restart the backend and click it; the answer goes through.
+3. **Groq API error / rate limit**: set a wrong `GROQ_API_KEY` and restart the server. The
+   server retries with backoff, then the UI shows a friendly "give it a second" message with
+   a retry — never a crash. (Transcription falls back the same way.)
+4. **Refresh mid-interview**: refresh the tab during the interview — you land back on the
+   exact current question ("Picking up where you left off…"), because the server owns the
+   question index and state. Refresh after finishing — you land on your report.
+5. **Empty / inaudible answer**: click Answer and say nothing (or send `...` as text) — you
+   get "I didn't catch that — try again, or type your answer instead." and the question does
+   not advance.
+6. **Input limits**: recordings auto-stop at 3 minutes and submit; capstone PDFs over 10 MB
+   are rejected with a clear message; all user text is sanitized before reaching prompts.
