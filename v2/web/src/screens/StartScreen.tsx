@@ -10,15 +10,17 @@ const MODE_CHIPS: { mode: InterviewMode; label: string }[] = [
 interface Props {
   busy: boolean;
   error: string;
+  /** Pre-fills the form, e.g. "Interview again" from the report. */
+  initial?: CreateSessionInput;
   onSubmit: (input: CreateSessionInput) => void;
 }
 
-export function StartScreen({ busy, error, onSubmit }: Props) {
-  const [mode, setMode] = useState<InterviewMode>('skill');
-  const [skill, setSkill] = useState('');
-  const [level, setLevel] = useState('beginner');
-  const [resumeText, setResumeText] = useState('');
-  const [file, setFile] = useState<File | null>(null);
+export function StartScreen({ busy, error, initial, onSubmit }: Props) {
+  const [mode, setMode] = useState<InterviewMode>(initial?.mode ?? 'skill');
+  const [skill, setSkill] = useState(initial?.skill ?? '');
+  const [level, setLevel] = useState(initial?.level ?? 'beginner');
+  const [resumeText, setResumeText] = useState(initial?.resumeText ?? '');
+  const [file, setFile] = useState<File | null>(initial?.capstoneFile ?? null);
 
   const ready =
     mode === 'skill' ? skill.trim() !== '' : mode === 'resume' ? resumeText.trim() !== '' : !!file;
@@ -105,6 +107,11 @@ export function StartScreen({ busy, error, onSubmit }: Props) {
               accept="application/pdf"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             />
+            {file && (
+              <span style={{ fontSize: 'var(--fs-small)', color: 'var(--text-secondary)' }}>
+                Using: {file.name}
+              </span>
+            )}
           </label>
         )}
 

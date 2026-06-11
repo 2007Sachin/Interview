@@ -7,6 +7,7 @@ import {
 } from './lib/api';
 import { preloadTts } from './lib/tts';
 import { StartScreen } from './screens/StartScreen';
+import { ReportScreen } from './screens/ReportScreen';
 import { BriefingScreen } from './screens/BriefingScreen';
 import { MicCheckScreen } from './screens/MicCheckScreen';
 import { MeetScreen } from './screens/MeetScreen';
@@ -24,14 +25,17 @@ export default function App() {
   const [report, setReport] = useState<Report | null>(null);
   const [creating, setCreating] = useState(false);
   const [startError, setStartError] = useState('');
+  const [lastInput, setLastInput] = useState<CreateSessionInput | undefined>(undefined);
 
   async function handleStart(input: CreateSessionInput) {
     setCreating(true);
     setStartError('');
+    setLastInput(input);
     void preloadTts();
     try {
       const s = await createSession(input);
       setSession(s);
+      setReport(null);
       setScreen('briefing');
     } catch (err) {
       setStartError(
@@ -44,7 +48,14 @@ export default function App() {
 
   switch (screen) {
     case 'start':
-      return <StartScreen busy={creating} error={startError} onSubmit={(i) => void handleStart(i)} />;
+      return (
+        <StartScreen
+          busy={creating}
+          error={startError}
+          initial={lastInput}
+          onSubmit={(i) => void handleStart(i)}
+        />
+      );
     case 'briefing':
       return session ? (
         <BriefingScreen session={session} onContinue={() => setScreen('miccheck')} />
@@ -84,19 +95,12 @@ export default function App() {
         />
       ) : null;
     case 'report':
-      return (
-        <main className="screen enter">
-          <p className="screen-kicker">Coaching report</p>
-          <h1>Your report is ready</h1>
-          <div className="card">
-            <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
-              {report?.overall.summary ?? 'Report generated.'}
-            </p>
-          </div>
-          <p className="screen-sub" style={{ marginTop: 'var(--space-4)' }}>
-            The full coaching report page arrives in Stage 3.
-          </p>
-        </main>
-      );
+      return report && session ? (
+        <ReportScreen
+          report={report}
+          interviewerName={session.interviewerName}
+          onRestart={() => setScreen('start')}
+        />
+      ) : null;
   }
 }

@@ -107,3 +107,23 @@ npm run build
 7. **Wrap-up**: Asha speaks a warm closing line while the report generates in the
    background; the screen transitions on its own when it's ready (full report page is
    Stage 3).
+
+### Stage 3 — the coaching report
+
+1. Complete an interview (or click **End interview** partway through — a partial round must
+   still produce a report).
+2. After wrap-up the report page renders. Check every section, in this order:
+   1. Readiness level badge ("needs practice" / "developing" / "interview-ready") shown
+      more prominently than the numeric score, with the summary underneath;
+   2. **What you did well** — 2–3 highlights, each quoting or referencing something you
+      actually said;
+   3. **Your one thing to fix** — a single focused card (title / why / how);
+   4. SWOT as a clean 2×2 card grid — verify every point is traceable to your transcript;
+   5. Per-question cards with answer summary, score, feedback and how to improve;
+   6. Closing call-to-action: **Interview again** returns to the start screen with your
+      setup pre-filled.
+3. Click **Save as PDF** — the browser print dialog opens with a clean, print-friendly
+   layout (no buttons, no animations).
+4. Refresh-resilience of the report itself comes in Stage 4; for now verify the report also
+   persisted server-side: the session JSON under `v2/server/data/sessions/` contains a
+   `report` object.

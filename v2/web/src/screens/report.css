@@ -1,0 +1,205 @@
+.report {
+  gap: var(--space-6);
+}
+
+.report section {
+  display: block;
+}
+
+.report-hero {
+  text-align: center;
+  padding: var(--space-6);
+}
+
+.readiness-badge {
+  display: inline-block;
+  border-radius: var(--radius-pill);
+  padding: var(--space-2) var(--space-5);
+  font-weight: 700;
+  font-size: var(--fs-subtitle);
+  letter-spacing: 0.02em;
+}
+
+.readiness-tone {
+  font-size: var(--fs-subtitle);
+  margin: var(--space-4) 0 var(--space-2);
+}
+
+.report-summary {
+  color: var(--text-secondary);
+  max-width: 60ch;
+  margin: 0 auto var(--space-4);
+}
+
+.report-score {
+  margin: 0;
+}
+
+.report-partial {
+  margin: var(--space-3) 0 0;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+
+/* Highlights */
+.highlight-list {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.highlight-card {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-4);
+}
+
+.highlight-card p {
+  margin: 0;
+}
+
+.highlight-mark {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--success-soft);
+  color: var(--success);
+  font-weight: 700;
+}
+
+/* One thing to fix */
+.fix-card {
+  border-left: 4px solid var(--accent);
+}
+
+.fix-card h3 {
+  font-size: var(--fs-subtitle);
+}
+
+.fix-card p {
+  margin: var(--space-1) 0 var(--space-3);
+  color: var(--text-secondary);
+}
+
+.fix-card p.label {
+  margin-bottom: 0;
+  color: var(--text-muted);
+}
+
+/* SWOT 2x2 */
+.swot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+@media (max-width: 560px) {
+  .swot-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.swot-cell ul {
+  margin: var(--space-2) 0 0;
+  padding-left: 1.1rem;
+  color: var(--text-secondary);
+}
+
+.swot-cell li + li {
+  margin-top: var(--space-2);
+}
+
+.swot-hint {
+  margin: var(--space-1) 0 0;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+
+/* Per-question cards */
+.pq-list {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.pq-head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  align-items: baseline;
+}
+
+.pq-question {
+  margin: 0;
+  font-weight: 600;
+}
+
+.pq-score {
+  flex: none;
+  font-size: var(--fs-small);
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--primary-soft);
+  border-radius: var(--radius-pill);
+  padding: var(--space-1) var(--space-3);
+}
+
+.pq-row {
+  margin: var(--space-3) 0 0;
+  color: var(--text-secondary);
+}
+
+.pq-row .label,
+.pq-question .label {
+  display: block;
+  margin-bottom: var(--space-1);
+}
+
+/* Closing CTA */
+.report-cta {
+  text-align: center;
+  background: var(--primary-soft);
+  border-color: transparent;
+}
+
+.report-cta-actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+  margin-top: var(--space-4);
+}
+
+/* ── Print: save-as-PDF via the browser, no paid services ──────────────── */
+@media print {
+  body {
+    background: #fff;
+  }
+
+  .report {
+    max-width: none;
+    padding: 0;
+    gap: var(--space-4);
+  }
+
+  .card {
+    box-shadow: none;
+    border-color: var(--border);
+    break-inside: avoid;
+  }
+
+  .report-cta,
+  .report-cta-actions {
+    display: none;
+  }
+
+  .swot-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .enter,
+  .enter-slow {
+    animation: none;
+  }
+}
