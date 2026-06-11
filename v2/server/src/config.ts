@@ -26,6 +26,8 @@ export const config = {
   supabaseUrl: env('SUPABASE_URL', ''),
   supabaseServiceKey: env('SUPABASE_SERVICE_KEY', ''),
   adminKey: env('ADMIN_KEY', ''),
+  // In production the static frontend is served from a different origin.
+  frontendOrigin: env('FRONTEND_ORIGIN', ''),
   totalQuestions: Number(env('TOTAL_QUESTIONS', '8')),
   maxAudioBytes: 25 * 1024 * 1024, // ~3 min of webm/opus is well under this; Groq caps at 25MB
   maxPdfBytes: 10 * 1024 * 1024,

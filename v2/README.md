@@ -150,3 +150,101 @@ Simulate each failure and confirm the recovery path (no dead-end screens anywher
    not advance.
 6. **Input limits**: recordings auto-stop at 3 minutes and submit; capstone PDFs over 10 MB
    are rejected with a clear message; all user text is sanitized before reaching prompts.
+
+### Stage 5 — production prep (Supabase)
+
+1. Create a free project at https://supabase.com, then run the [table schema](#supabase-table-schema)
+   below in its SQL editor.
+2. In `v2/.env` set:
+   ```
+   STORAGE_BACKEND=supabase
+   SUPABASE_URL=https://<your-project>.supabase.co
+   SUPABASE_SERVICE_KEY=<service_role key from Project Settings → API>
+   ```
+3. Restart the backend and run a complete interview end-to-end (start → report).
+4. Verify in Supabase Table Editor: the `sessions` row exists, `status` is `done`,
+   `cost_usd` is populated, and `data` contains the brief, transcripts and report.
+5. Refresh mid-interview still resumes (state now comes from Supabase).
+
+---
+
+## Supabase table schema
+
+Run this once in the Supabase SQL editor:
+
+```sql
+create table public.sessions (
+  id uuid primary key,
+  created_at timestamptz not null default now(),
+  mode text not null,
+  status text not null,
+  report_status text not null default 'none',
+  cost_usd numeric not null default 0,
+  data jsonb not null
+);
+
+-- The backend uses the service-role key, so lock the table down for anon users.
+alter table public.sessions enable row level security;
+```
+
+One row per interview. The whole session — brief, per-question transcripts, the coaching
+report and the cost log — lives in `data` (jsonb); `mode`, `status`, `report_status` and
+`cost_usd` are promoted to columns for cheap admin queries.
+
+## Admin peek
+
+Two ways to see interviews/day and average cost per interview:
+
+1. **HTTP endpoint** (works with both storage backends): set `ADMIN_KEY` to a long random
+   string, then `GET /api/admin/stats?key=<ADMIN_KEY>` returns
+   `{ "days": [{ "day": "2026-06-11", "interviews": 12, "avgCostUsd": 0.0021 }, …] }`.
+2. **Supabase SQL** (production):
+   ```sql
+   select date_trunc('day', created_at)::date as day,
+          count(*)                            as interviews,
+          round(avg(cost_usd), 6)             as avg_cost_usd
+   from sessions
+   group by 1
+   order by 1 desc;
+   ```
+
+## Deploy to Railway
+
+Two services from this repo — **no GPU and no Python service are needed**; TTS runs in the
+visitor's browser. Once the repo is connected, pushes to `main` auto-deploy both services.
+
+### Service 1 — backend (Node)
+
+| Setting | Value |
+| --- | --- |
+| Root directory | `v2/server` |
+| Build command | `npm install && npm run build` |
+| Start command | `npm start` |
+
+### Service 2 — frontend (static build)
+
+| Setting | Value |
+| --- | --- |
+| Root directory | `v2/web` |
+| Build command | `npm install && npm run build` |
+| Start command | `npx serve -s dist -l $PORT` (or use a Railway static-site builder) |
+
+### Environment variables
+
+| Variable | Service | Value |
+| --- | --- | --- |
+| `GROQ_API_KEY` | backend | your Groq key (the app's one real secret) |
+| `GROQ_STT_MODEL` | backend | `whisper-large-v3-turbo` (default) |
+| `GROQ_MODEL_FAST` | backend | `llama-3.1-8b-instant` (default) |
+| `GROQ_MODEL_SMART` | backend | `llama-3.3-70b-versatile` (default) |
+| `STORAGE_BACKEND` | backend | `supabase` |
+| `SUPABASE_URL` | backend | `https://<project>.supabase.co` |
+| `SUPABASE_SERVICE_KEY` | backend | service-role key (production secret) |
+| `FRONTEND_ORIGIN` | backend | the frontend service's public URL (enables CORS) |
+| `INTERVIEWER_NAME` | backend | optional, default `Asha` |
+| `ADMIN_KEY` | backend | optional, enables `/api/admin/stats` |
+| `PORT` | backend | set by Railway automatically |
+| `VITE_API_BASE` | frontend (build-time) | the backend service's public URL |
+
+Real secrets (`GROQ_API_KEY`, `SUPABASE_SERVICE_KEY`) live only in Railway/`.env` — never
+commit them; `.env` is gitignored and `.env.example` documents every variable.
