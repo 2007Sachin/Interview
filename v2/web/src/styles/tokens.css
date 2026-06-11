@@ -1,0 +1,65 @@
+/* Design tokens — the only place colors, type and motion values are defined. */
+:root {
+  /* Background layers: soft off-white, calm and professional */
+  --bg-base: #faf9f6;
+  --bg-raised: #ffffff;
+  --bg-sunken: #f1efe9;
+  --bg-overlay: rgba(28, 27, 51, 0.45);
+
+  /* Text hierarchy */
+  --text-primary: #1c1b33;
+  --text-secondary: #4c4a66;
+  --text-muted: #8a87a3;
+  --text-on-primary: #ffffff;
+
+  /* Brand: deep indigo primary, warm amber accent */
+  --primary: #3b3486;
+  --primary-hover: #2e2870;
+  --primary-soft: #e9e7f7;
+  --accent: #e8a33d;
+  --accent-soft: #fdf3e0;
+
+  /* Semantic */
+  --success: #2e7d5b;
+  --success-soft: #e3f2ea;
+  --warning: #b3621a;
+  --warning-soft: #fbeede;
+  --danger: #b3403a;
+  --danger-soft: #f9e7e6;
+
+  /* Borders & shadows */
+  --border: #e4e1d8;
+  --border-strong: #cfcabb;
+  --shadow-card: 0 1px 3px rgba(28, 27, 51, 0.06), 0 8px 24px rgba(28, 27, 51, 0.07);
+  --shadow-pop: 0 4px 12px rgba(28, 27, 51, 0.12), 0 16px 40px rgba(28, 27, 51, 0.14);
+
+  /* Type scale */
+  --font-body: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --fs-display: clamp(1.6rem, 1.2rem + 1.6vw, 2.4rem); /* questions */
+  --fs-title: 1.45rem;
+  --fs-subtitle: 1.15rem;
+  --fs-body: 1rem; /* transcripts */
+  --fs-small: 0.875rem;
+  --fs-label: 0.78rem; /* muted status labels */
+
+  /* Spacing & radius */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+
+  /* Motion language: fade + small rise, always eased */
+  --motion-rise: 10px;
+  --dur-fast: 200ms;
+  --dur-base: 260ms;
+  --dur-state: 350ms; /* avatar state transitions */
+  --ease-out: cubic-bezier(0.22, 0.8, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.55, 0.06, 0.25, 0.95);
+}
