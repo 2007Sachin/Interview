@@ -1,0 +1,216 @@
+/* Shared journey layout */
+.screen {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-5) var(--space-7);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.screen-center {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.screen-kicker {
+  font-size: var(--fs-label);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin: 0 0 var(--space-2);
+}
+
+.screen-title {
+  font-size: var(--fs-title);
+}
+
+.screen-sub {
+  color: var(--text-secondary);
+  max-width: 52ch;
+}
+
+/* Mode chips on the start screen */
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.chip {
+  border: 1.5px solid var(--border-strong);
+  background: var(--bg-raised);
+  color: var(--text-primary);
+  border-radius: var(--radius-pill);
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.chip:hover {
+  border-color: var(--primary);
+}
+
+.chip.selected {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--text-on-primary);
+}
+
+.field {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.field-input {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  font-size: var(--fs-body);
+  font-family: inherit;
+  background: var(--bg-raised);
+  color: var(--text-primary);
+}
+
+textarea.field-input {
+  resize: vertical;
+  min-height: 140px;
+  line-height: 1.5;
+}
+
+/* Briefing facts */
+.fact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+}
+
+.fact {
+  background: var(--bg-sunken);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+}
+
+.fact b {
+  display: block;
+  font-size: var(--fs-subtitle);
+}
+
+.fact span {
+  font-size: var(--fs-small);
+  color: var(--text-secondary);
+}
+
+/* Mic check meter */
+.meter {
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-sunken);
+  overflow: hidden;
+}
+
+.meter-fill {
+  height: 100%;
+  background: var(--success);
+  border-radius: var(--radius-pill);
+  transform-origin: left;
+  transition: transform 80ms linear;
+}
+
+/* Interview room */
+.room {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-5) 120px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.room-question {
+  font-size: var(--fs-display);
+  text-align: center;
+  max-width: 24ch;
+  margin: var(--space-2) 0 0;
+  line-height: 1.3;
+}
+
+.progress-track {
+  width: min(420px, 80vw);
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-sunken);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: var(--radius-pill);
+  transform-origin: left;
+  transition: transform var(--dur-state) var(--ease-out);
+}
+
+.transcript-live {
+  width: 100%;
+  max-width: 560px;
+  min-height: 64px;
+}
+
+/* Fixed bottom control bar, like a call toolbar */
+.control-bar {
+  position: fixed;
+  left: 50%;
+  bottom: var(--space-5);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-pop);
+  padding: var(--space-3) var(--space-4);
+  z-index: 10;
+}
+
+.rec-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--danger);
+  margin-right: var(--space-2);
+  animation: rec-blink 1.2s var(--ease-in-out) infinite;
+}
+
+@keyframes rec-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* Type-instead panel */
+.type-panel {
+  position: fixed;
+  left: 50%;
+  bottom: 96px;
+  transform: translateX(-50%);
+  width: min(560px, calc(100vw - 2 * var(--space-5)));
+  z-index: 9;
+}

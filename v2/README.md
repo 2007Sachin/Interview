@@ -81,3 +81,29 @@ npm run build
 6. Check the server terminal: a `[cost] session=… estimate=$…` line appears once the
    background report finishes (report UI lands in Stage 3).
 7. Restore `TOTAL_QUESTIONS=8` (or delete the line) when done.
+
+### Stage 2 — full student journey
+
+1. Start backend + frontend as above (a short run with `TOTAL_QUESTIONS=2` is fine), open
+   http://localhost:5173.
+2. **Start**: the three chips ("A skill interview" / "Defend my capstone" / "My resume")
+   switch the input below. Pick *A skill interview*, enter a skill, click **Set up my
+   interview**.
+3. **Briefing**: shows interview length, the question count, how it works, and what you'll
+   get. One **Continue** button.
+4. **Mic check** ("Joining your interview"): *Test my microphone* — speak and watch the level
+   bar move until it confirms "Heard you loud and clear". *Hear Asha's voice* plays a TTS
+   line (first play downloads the voice model).
+5. **Meet your interviewer**: the orb appears, pulses while speaking the intro
+   ("Hi, I'm Asha…"), then settles. Click **Start the interview**.
+6. **Interview room** — confirm the character state matches reality at every step:
+   - orb pulses with amber waveform rings + "Asha is speaking…" while the question plays;
+   - calm green ripples + "Asha is listening…" while you record;
+   - orbital shimmer + "Catching every word…/Asha is thinking…" while transcribing/deciding;
+   - progress shows "Question N of M" with the animated amber bar;
+   - your latest transcript appears under the question after each answer;
+   - bottom call-style toolbar: **Answer/Done**, **Repeat question**, **Type instead**,
+     **End interview** (asks once, then ends and still produces a report).
+7. **Wrap-up**: Asha speaks a warm closing line while the report generates in the
+   background; the screen transitions on its own when it's ready (full report page is
+   Stage 3).
