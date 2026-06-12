@@ -118,6 +118,16 @@ export function StartScreen({ busy, error, initial, onSubmit }: Props) {
         <button className="btn btn-primary" onClick={submit} disabled={!ready || busy}>
           {busy ? 'Building your interview…' : 'Set up my interview'}
         </button>
+        {busy && (
+          <div style={{ display: 'grid', gap: 'var(--space-2)' }} aria-hidden="true">
+            <p className="label" style={{ margin: 0 }}>
+              Designing questions just for you
+            </p>
+            <div className="skeleton" style={{ width: '55%' }} />
+            <div className="skeleton" style={{ width: '88%' }} />
+            <div className="skeleton" style={{ width: '72%' }} />
+          </div>
+        )}
         {error && <p className="error-note">{error}</p>}
       </div>
     </main>

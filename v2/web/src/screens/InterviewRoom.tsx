@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { InterviewerAvatar, type AvatarState } from '../components/InterviewerAvatar';
+import { LevelRing } from '../components/LevelRing';
+import { QuestionText } from '../components/QuestionText';
 import {
   answerWithAudio,
   answerWithText,
@@ -7,8 +9,10 @@ import {
   type AnswerResponse,
   type SessionView,
 } from '../lib/api';
+import { createMicMeter, isMuted, playAdvanceTick, setMuted, type MicMeter } from '../lib/audio';
+import { setMood } from '../lib/mood';
 import { startRecording, type ActiveRecording } from '../lib/recorder';
-import { speak, stopSpeaking } from '../lib/tts';
+import { getTtsLevel, speak, stopSpeaking } from '../lib/tts';
 
 type TurnPhase = 'speaking' | 'ready' | 'recording' | 'processing';
 
@@ -33,33 +37,61 @@ export function InterviewRoom({ session, micWorks, resumed, onFinished }: Props)
   const [isFollowUp, setIsFollowUp] = useState(session.currentPromptIsFollowUp);
   const [questionIndex, setQuestionIndex] = useState(session.questionIndex);
   const [transcript, setTranscript] = useState(session.lastTranscript);
+  const [speechSeconds, setSpeechSeconds] = useState<number | null>(resumed ? 0 : null);
   const [notice, setNotice] = useState('');
   const [showType, setShowType] = useState(!micWorks);
   const [typed, setTyped] = useState('');
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [failedClip, setFailedClip] = useState<Blob | null>(null);
+  const [micMeter, setMicMeter] = useState<MicMeter | null>(null);
+  const [muted, setMutedState] = useState(isMuted());
+  const [cinematic, setCinematic] = useState(!resumed);
   const recordingRef = useRef<ActiveRecording | null>(null);
+  const micMeterRef = useRef<MicMeter | null>(null);
   const startedRef = useRef(false);
 
   const total = session.total;
   const name = session.interviewerName;
 
   const sayPrompt = useCallback(async (text: string) => {
+    setSpeechSeconds(null);
     setPhase('speaking');
-    await speak(text);
+    await speak(text, (d) => setSpeechSeconds(d));
     setPhase('ready');
   }, []);
+
+  // Cinematic start beat: dimmed backdrop while the orb settles in and the
+  // first question reveals word-by-word with the voice.
+  useEffect(() => {
+    if (!cinematic) return;
+    const t = window.setTimeout(() => setCinematic(false), 1600);
+    return () => window.clearTimeout(t);
+  }, [cinematic]);
 
   useEffect(() => {
     if (startedRef.current) return;
     startedRef.current = true;
-    // Initial phase is already 'speaking' when not resuming; just play the audio.
-    if (!resumed) void speak(session.currentPrompt).then(() => setPhase('ready'));
+    if (!resumed) {
+      void speak(session.currentPrompt, (d) => setSpeechSeconds(d)).then(() => setPhase('ready'));
+    }
     return () => {
       stopSpeaking();
       recordingRef.current?.cancel();
+      micMeterRef.current?.dispose();
     };
-  }, [resumed, sayPrompt, session.currentPrompt]);
+  }, [resumed, session.currentPrompt]);
+
+  // Ambient mood follows who is holding the room.
+  useEffect(() => {
+    setMood(phase === 'recording' ? 'student' : phase === 'speaking' ? 'asha' : 'neutral');
+    return () => setMood('neutral');
+  }, [phase]);
+
+  function stopMicMeter() {
+    micMeterRef.current?.dispose();
+    micMeterRef.current = null;
+    setMicMeter(null);
+  }
 
   function applyResult(result: AnswerResponse) {
     setTranscript(result.transcript);
@@ -76,6 +108,7 @@ export function InterviewRoom({ session, micWorks, resumed, onFinished }: Props)
       onFinished(result.nextPrompt);
       return;
     }
+    playAdvanceTick();
     setPrompt(result.nextPrompt);
     void sayPrompt(result.nextPrompt);
   }
@@ -84,7 +117,11 @@ export function InterviewRoom({ session, micWorks, resumed, onFinished }: Props)
     setNotice('');
     stopSpeaking();
     try {
-      recordingRef.current = await startRecording(() => void finishAnswer());
+      const rec = await startRecording(() => void finishAnswer());
+      recordingRef.current = rec;
+      const meter = createMicMeter(rec.stream);
+      micMeterRef.current = meter;
+      setMicMeter(meter);
       setPhase('recording');
     } catch {
       setNotice('Microphone access was blocked — no problem, type your answer instead.');
@@ -119,6 +156,7 @@ export function InterviewRoom({ session, micWorks, resumed, onFinished }: Props)
     const rec = recordingRef.current;
     if (!rec) return;
     recordingRef.current = null;
+    stopMicMeter();
     const blob = await rec.stop();
     await uploadClip(blob);
   }
@@ -141,6 +179,7 @@ export function InterviewRoom({ session, micWorks, resumed, onFinished }: Props)
   async function endEarly() {
     stopSpeaking();
     recordingRef.current?.cancel();
+    stopMicMeter();
     setPhase('processing');
     try {
       await endSession(session.id);
@@ -150,6 +189,12 @@ export function InterviewRoom({ session, micWorks, resumed, onFinished }: Props)
     onFinished(`Thanks for practicing with me today — ending here is completely fine.`);
   }
 
+  function toggleMute() {
+    const next = !muted;
+    setMuted(next);
+    setMutedState(next);
+  }
+
   const statusLabel =
     phase === 'processing'
       ? transcript && failedClip === null
@@ -157,31 +202,46 @@ export function InterviewRoom({ session, micWorks, resumed, onFinished }: Props)
         : 'Catching every word…'
       : undefined;
 
+  const avatarLevel =
+    phase === 'speaking' ? getTtsLevel : phase === 'recording' && micMeter ? micMeter.read : undefined;
+
   return (
-    <main className="room enter">
-      <InterviewerAvatar state={phaseToAvatar[phase]} name={name} statusLabel={statusLabel} />
+    <main className={`room enter ${cinematic ? 'room-cinematic' : ''}`}>
+      {cinematic && <div className="start-dim" aria-hidden="true" />}
+
+      <div className={`room-orb ${cinematic ? 'orb-arrive' : ''}`} key={`inhale-${questionIndex}-${isFollowUp}`}>
+        <InterviewerAvatar
+          state={phaseToAvatar[phase]}
+          name={name}
+          statusLabel={statusLabel}
+          getLevel={avatarLevel}
+        />
+      </div>
 
       <div style={{ textAlign: 'center' }}>
         <p className="screen-kicker">
-          {isFollowUp ? `Follow-up · Question ${questionIndex + 1} of ${total}` : `Question ${questionIndex + 1} of ${total}`}
+          {isFollowUp
+            ? `Follow-up · Question ${questionIndex + 1} of ${total}`
+            : `Question ${questionIndex + 1} of ${total}`}
         </p>
         <div className="progress-track" aria-hidden="true">
           <div
             className="progress-fill"
             style={{ transform: `scaleX(${(questionIndex + 1) / total})` }}
           />
+          <span className="progress-glint" key={`glint-${questionIndex}`} />
         </div>
       </div>
 
-      <h1 className="room-question" key={prompt}>
-        <span className="enter" style={{ display: 'inline-block' }}>{prompt}</span>
-      </h1>
+      <QuestionText key={prompt} text={prompt} speechSeconds={speechSeconds} />
 
       <div className="transcript-live">
         {transcript && (
-          <div className="card enter" style={{ padding: 'var(--space-4)' }}>
+          <div className="card transcript-card enter" key={transcript}>
             <p className="label">What {name} heard</p>
-            <p style={{ margin: 'var(--space-1) 0 0', color: 'var(--text-secondary)' }}>{transcript}</p>
+            <p style={{ margin: 'var(--space-1) 0 0', color: 'var(--text-secondary)' }}>
+              {transcript}
+            </p>
           </div>
         )}
         {notice && (
@@ -197,7 +257,7 @@ export function InterviewRoom({ session, micWorks, resumed, onFinished }: Props)
       </div>
 
       {showType && phase !== 'recording' && (
-        <div className="type-panel card enter" style={{ padding: 'var(--space-3)' }}>
+        <div className="type-panel card glass enter" style={{ padding: 'var(--space-3)' }}>
           <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
             <input
               className="field-input"
@@ -219,21 +279,25 @@ export function InterviewRoom({ session, micWorks, resumed, onFinished }: Props)
         </div>
       )}
 
-      <div className="control-bar">
-        {phase === 'recording' ? (
-          <button className="btn btn-primary" onClick={() => void finishAnswer()}>
-            <span className="rec-dot" />
-            Done — send my answer
-          </button>
-        ) : (
-          <button
-            className="btn btn-primary"
-            onClick={() => void startAnswer()}
-            disabled={phase === 'processing'}
-          >
-            {phase === 'processing' ? 'One moment…' : 'Answer'}
-          </button>
-        )}
+      <div className="control-bar glass">
+        <span className="ptt-wrap" data-phase={phase}>
+          {phase === 'recording' && micMeter && <LevelRing read={micMeter.read} />}
+          {phase === 'recording' ? (
+            <button className="btn btn-primary ptt ptt-recording" onClick={() => void finishAnswer()}>
+              <span className="rec-dot" />
+              Done — send my answer
+            </button>
+          ) : (
+            <button
+              className={`btn btn-primary ptt ${phase === 'processing' ? 'ptt-processing' : 'ptt-idle'}`}
+              onClick={() => void startAnswer()}
+              disabled={phase === 'processing'}
+            >
+              {phase === 'processing' && <span className="ptt-spinner" aria-hidden="true" />}
+              {phase === 'processing' ? 'One moment…' : 'Answer'}
+            </button>
+          )}
+        </span>
         <button
           className="btn btn-quiet"
           onClick={() => {
@@ -260,6 +324,14 @@ export function InterviewRoom({ session, micWorks, resumed, onFinished }: Props)
             End interview
           </button>
         )}
+        <button
+          className="btn btn-quiet btn-icon"
+          data-tip={muted ? 'Unmute UI sounds' : 'Mute UI sounds'}
+          aria-label={muted ? 'Unmute UI sounds' : 'Mute UI sounds'}
+          onClick={toggleMute}
+        >
+          {muted ? '🔇' : '🔊'}
+        </button>
       </div>
     </main>
   );

@@ -147,11 +147,28 @@ textarea.field-input {
 }
 
 .progress-track {
+  position: relative;
   width: min(420px, 80vw);
   height: 6px;
   border-radius: var(--radius-pill);
   background: var(--bg-sunken);
   overflow: hidden;
+}
+
+/* One-shot glint sweep on each advance (keyed remount restarts it) */
+.progress-glint {
+  position: absolute;
+  inset: 0;
+  width: 40px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+  transform: translateX(-48px);
+  animation: glint-sweep 900ms var(--ease-in-out) 200ms both;
+}
+
+@keyframes glint-sweep {
+  to {
+    transform: translateX(min(420px, 80vw));
+  }
 }
 
 .progress-fill {
@@ -168,6 +185,30 @@ textarea.field-input {
   min-height: 64px;
 }
 
+.transcript-card {
+  padding: var(--space-4);
+  animation: transcript-in var(--dur-base) var(--ease-spring) both;
+}
+
+@keyframes transcript-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Glass surfaces: control bar, type panel, status pill */
+.glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(14px) saturate(1.3);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+}
+
 /* Fixed bottom control bar, like a call toolbar */
 .control-bar {
   position: fixed;
@@ -177,12 +218,152 @@ textarea.field-input {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  background: var(--bg-raised);
-  border: 1px solid var(--border);
   border-radius: var(--radius-pill);
   box-shadow: var(--shadow-pop);
   padding: var(--space-3) var(--space-4);
   z-index: 10;
+}
+
+.btn-icon {
+  padding: var(--space-3);
+  line-height: 1;
+}
+
+/* ── Cinematic interview start ──────────────────────────────────────────── */
+.start-dim {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-overlay);
+  z-index: 5;
+  pointer-events: none;
+  animation: start-dim-out 1.6s var(--ease-in-out) both;
+}
+
+@keyframes start-dim-out {
+  0% {
+    opacity: 1;
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.room-cinematic .room-orb {
+  position: relative;
+  z-index: 6;
+}
+
+/* doubled class beats the .room-orb inhale rule below */
+.room-orb.orb-arrive {
+  animation: orb-arrive 900ms var(--ease-spring) both;
+}
+
+@keyframes orb-arrive {
+  from {
+    opacity: 0;
+    transform: scale(0.6) translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Small "inhale" pulse on every question advance (keyed remount) */
+.room-orb {
+  animation: orb-inhale 520ms var(--ease-in-out);
+}
+
+@keyframes orb-inhale {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.05);
+  }
+}
+
+/* ── Hero push-to-talk button ───────────────────────────────────────────── */
+.ptt-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.ptt {
+  position: relative;
+  z-index: 1;
+}
+
+/* Inviting glow: a pseudo-ring breathing via transform/opacity only */
+.ptt-idle:not(:disabled)::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--primary);
+  opacity: 0;
+  animation: ptt-invite 3.2s var(--ease-in-out) infinite;
+  pointer-events: none;
+}
+
+@keyframes ptt-invite {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(1.06);
+  }
+}
+
+.ptt-recording {
+  background: linear-gradient(135deg, var(--danger), var(--accent));
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+/* Processing: spinner morph inside the button */
+.ptt-spinner {
+  display: inline-block;
+  width: 0.85em;
+  height: 0.85em;
+  margin-right: var(--space-2);
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: var(--text-on-primary);
+  animation: ptt-spin 0.9s linear infinite;
+  vertical-align: -0.12em;
+}
+
+@keyframes ptt-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Live amplitude rings fed by the mic analyser (scaled per-frame in JS) */
+.level-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: var(--radius-pill);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.level-ring-outer {
+  border: 2px solid var(--accent);
+  opacity: 0.25;
+}
+
+.level-ring-inner {
+  inset: -2px;
+  border: 1.5px solid var(--danger);
+  opacity: 0.5;
 }
 
 .rec-dot {
@@ -202,6 +383,45 @@ textarea.field-input {
   }
   50% {
     opacity: 0.25;
+  }
+}
+
+/* ── Wrap-up: send-off + morph into the report ──────────────────────────── */
+.wrapup-skeleton {
+  margin-top: var(--space-5);
+  width: min(440px, 86vw);
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+}
+
+.orb-sendoff {
+  animation: orb-sendoff 900ms var(--ease-in-out) both;
+}
+
+@keyframes orb-sendoff {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  45% {
+    transform: scale(1.18);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.3);
+    opacity: 0;
+  }
+}
+
+.wrapup-leave {
+  animation: wrapup-leave 650ms var(--ease-in-out) 120ms both;
+}
+
+@keyframes wrapup-leave {
+  to {
+    opacity: 0;
+    transform: translateY(-14px);
   }
 }
 

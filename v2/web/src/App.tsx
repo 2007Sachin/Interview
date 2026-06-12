@@ -15,6 +15,7 @@ import { MicCheckScreen } from './screens/MicCheckScreen';
 import { MeetScreen } from './screens/MeetScreen';
 import { InterviewRoom } from './screens/InterviewRoom';
 import { WrapUpScreen } from './screens/WrapUpScreen';
+import { Ambient } from './components/Ambient';
 import './screens/screens.css';
 
 type Screen =
@@ -102,8 +103,16 @@ export default function App() {
     }
   }
 
-  switch (screen) {
-    case 'restoring':
+  return (
+    <>
+      <Ambient />
+      {renderScreen()}
+    </>
+  );
+
+  function renderScreen() {
+    switch (screen) {
+      case 'restoring':
       return (
         <main className="screen screen-center enter">
           <p className="screen-sub">Picking up where you left off…</p>
@@ -169,5 +178,6 @@ export default function App() {
           }}
         />
       ) : null;
+    }
   }
 }

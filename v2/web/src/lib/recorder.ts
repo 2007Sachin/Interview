@@ -21,6 +21,8 @@ function pickMimeType(): string {
 }
 
 export interface ActiveRecording {
+  /** Live mic stream — used for the real-time amplitude ring while recording. */
+  stream: MediaStream;
   stop(): Promise<Blob>;
   cancel(): void;
 }
@@ -61,6 +63,7 @@ export async function startRecording(onAutoStop?: () => void): Promise<ActiveRec
   }, MAX_SECONDS * 1000);
 
   return {
+    stream,
     stop(): Promise<Blob> {
       window.clearTimeout(timer);
       return new Promise((resolve) => {

@@ -55,6 +55,13 @@
   --radius-lg: 22px;
   --radius-pill: 999px;
 
+  /* Glass surfaces */
+  --glass-bg: rgba(255, 255, 255, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.75);
+
+  /* Focus ring */
+  --focus-ring: 0 0 0 3px rgba(59, 52, 134, 0.35);
+
   /* Motion language: fade + small rise, always eased */
   --motion-rise: 10px;
   --dur-fast: 200ms;
@@ -62,4 +69,6 @@
   --dur-state: 350ms; /* avatar state transitions */
   --ease-out: cubic-bezier(0.22, 0.8, 0.36, 1);
   --ease-in-out: cubic-bezier(0.55, 0.06, 0.25, 0.95);
+  /* Spring feel: slight overshoot for press-release and entrances */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }

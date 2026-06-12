@@ -25,6 +25,7 @@ h2,
 h3 {
   margin: 0 0 var(--space-3);
   line-height: 1.25;
+  text-wrap: balance;
 }
 
 button {
@@ -77,9 +78,11 @@ button {
   font-size: var(--fs-body);
   font-weight: 600;
   cursor: pointer;
+  /* Spring on release: press snaps down fast, release overshoots gently */
   transition:
     background var(--dur-fast) var(--ease-out),
-    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    transform var(--dur-base) var(--ease-spring),
     opacity var(--dur-fast) var(--ease-out);
 }
 
@@ -89,7 +92,71 @@ button {
 }
 
 .btn:not(:disabled):active {
-  transform: scale(0.98);
+  transform: scale(0.97);
+  transition-duration: 60ms;
+}
+
+.btn:focus-visible,
+.chip:focus-visible,
+.field-input:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Tooltips on icon buttons */
+[data-tip] {
+  position: relative;
+}
+
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(3px);
+  background: var(--text-primary);
+  color: var(--bg-raised);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+[data-tip]:hover::after,
+[data-tip]:focus-visible::after {
+  opacity: 0.95;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Shimmer skeletons: translate-only sweep, never a bare spinner */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-sunken);
+  border-radius: var(--radius-sm);
+  min-height: 0.9rem;
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent);
+  animation: skeleton-sweep 1.6s var(--ease-in-out) infinite;
+}
+
+@keyframes skeleton-sweep {
+  to {
+    transform: translateX(100%);
+  }
 }
 
 .btn-primary {

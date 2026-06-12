@@ -18,6 +18,26 @@
   height: 180px;
 }
 
+/* Audio-reactive wrapper: scaled per-frame (transform only) from real sound */
+.avatar-react {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  will-change: transform;
+}
+
+/* Soft halo whose opacity follows the live audio level */
+.avatar-glow {
+  position: absolute;
+  inset: -18%;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--primary-soft) 0%, transparent 62%);
+  opacity: 0;
+  pointer-events: none;
+  will-change: opacity;
+}
+
 /* ── Ambient breathing core (always on) ─────────────────────────────────── */
 .avatar-orb {
   position: relative;
@@ -233,13 +253,35 @@
   color: var(--text-primary);
 }
 
+/* Status pill: glassy, with cross-fading text */
 .avatar-status {
-  margin: 0;
+  margin: var(--space-1) 0 0;
   font-size: var(--fs-label);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-muted);
-  transition: color var(--dur-base) var(--ease-out);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: var(--radius-pill);
+  padding: var(--space-1) var(--space-4);
+}
+
+.avatar-status-text {
+  display: inline-block;
+  animation: status-fade var(--dur-base) var(--ease-out) both;
+}
+
+@keyframes status-fade {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Reduced motion: static glow instead of animation (global rules also clamp

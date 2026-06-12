@@ -1,0 +1,104 @@
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.amb-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  will-change: transform;
+}
+
+/* Base atmosphere: two soft blobs drifting on 25-30s loops */
+.amb-base-a {
+  width: 55vmax;
+  height: 55vmax;
+  left: -18vmax;
+  top: -20vmax;
+  background: radial-gradient(circle, rgba(59, 52, 134, 0.1), transparent 65%);
+  animation: amb-drift-a 28s var(--ease-in-out) infinite;
+}
+
+.amb-base-b {
+  width: 48vmax;
+  height: 48vmax;
+  right: -16vmax;
+  bottom: -18vmax;
+  background: radial-gradient(circle, rgba(232, 163, 61, 0.09), transparent 65%);
+  animation: amb-drift-b 24s var(--ease-in-out) infinite;
+}
+
+/* Mood overlays: cross-faded by opacity only (gradients can't transition) */
+.amb-mood {
+  opacity: 0;
+  transition: opacity 1.6s var(--ease-in-out);
+}
+
+.amb-warm {
+  width: 70vmax;
+  height: 70vmax;
+  left: 50%;
+  top: 45%;
+  margin: -35vmax 0 0 -35vmax;
+  background: radial-gradient(circle, rgba(232, 163, 61, 0.13), transparent 60%);
+  animation: amb-drift-b 30s var(--ease-in-out) infinite;
+}
+
+.amb-indigo {
+  width: 70vmax;
+  height: 70vmax;
+  left: 50%;
+  top: 40%;
+  margin: -35vmax 0 0 -35vmax;
+  background: radial-gradient(circle, rgba(59, 52, 134, 0.14), transparent 60%);
+  animation: amb-drift-a 26s var(--ease-in-out) infinite;
+}
+
+:root[data-mood='student'] .amb-warm {
+  opacity: 1;
+}
+
+:root[data-mood='asha'] .amb-indigo {
+  opacity: 1;
+}
+
+@keyframes amb-drift-a {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(6vmax, 4vmax) scale(1.12);
+  }
+}
+
+@keyframes amb-drift-b {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-5vmax, -4vmax) scale(0.92);
+  }
+}
+
+/* Faint vignette/spotlight keeping focus on the orb + question */
+.amb-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 70% 60% at 50% 38%,
+    transparent 55%,
+    rgba(28, 27, 51, 0.06) 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .amb-blob {
+    animation: none !important;
+  }
+}
