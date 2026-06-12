@@ -7,11 +7,14 @@ interface Props {
   onBack: () => void;
   onOpenReport: (id: string) => void;
   onReInterview: (topicLabel: string) => void;
+  onDrill?: () => void;
+  drillBusy?: boolean;
+  drillError?: string;
 }
 
 const DATE_FMT = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
 
-export function ProgressScreen({ topicKey, onBack, onOpenReport, onReInterview }: Props) {
+export function ProgressScreen({ topicKey, onBack, onOpenReport, onReInterview, onDrill, drillBusy, drillError }: Props) {
   const [progress, setProgress] = useState<TopicProgress | null>(null);
   const [error, setError] = useState('');
 
@@ -73,26 +76,38 @@ export function ProgressScreen({ topicKey, onBack, onOpenReport, onReInterview }
                 <p style={{ margin: 'var(--space-2) 0 0' }}>{latest.progressNote}</p>
               ) : previous ? (
                 <p style={{ margin: 'var(--space-2) 0 0', color: 'var(--text-secondary)' }}>
-                  Last time's focus: “{previous.oneThingToFix}”. This time's: “{latest.oneThingToFix}”.
+                  Last time's focus: "{previous.oneThingToFix}". This time's: "{latest.oneThingToFix}".
                   {previous.oneThingToFix.toLowerCase() === latest.oneThingToFix.toLowerCase()
                     ? ' Same spot — make it the whole point of your next rep.'
                     : ' A new focus means the old one stopped being the problem. Progress.'}
                 </p>
               ) : (
                 <p style={{ margin: 'var(--space-2) 0 0', color: 'var(--text-secondary)' }}>
-                  Your first focus: “{latest.oneThingToFix}”. Fix it, re-interview, and this card
+                  Your first focus: "{latest.oneThingToFix}". Fix it, re-interview, and this card
                   will tell you whether it stuck.
                 </p>
               )}
             </div>
 
-            <button
-              className="btn btn-primary"
-              style={{ marginTop: 'var(--space-5)' }}
-              onClick={() => onReInterview(progress.topicLabel)}
-            >
-              Re-interview on {progress.topicLabel}
-            </button>
+            <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', marginTop: 'var(--space-5)' }}>
+              <button
+                className="btn btn-primary"
+                onClick={() => onReInterview(progress.topicLabel)}
+              >
+                Re-interview on {progress.topicLabel}
+              </button>
+              {onDrill && (
+                <button
+                  className="btn btn-secondary"
+                  onClick={onDrill}
+                  disabled={drillBusy}
+                  data-tip="A 3-question round built from your weak spots across topics"
+                >
+                  {drillBusy ? 'Building your drill…' : 'Weak spot drill'}
+                </button>
+              )}
+            </div>
+            {drillError && <p className="error-note" style={{ marginTop: 'var(--space-3)' }}>{drillError}</p>}
           </div>
 
           <aside className="brief-rail" aria-label="Attempts">

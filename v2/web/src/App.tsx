@@ -225,6 +225,9 @@ export default function App() {
             topicKey={progressTopic}
             onBack={() => setScreen('home')}
             onOpenReport={(id) => void openPastReport(id)}
+            onDrill={() => void handleDrill()}
+            drillBusy={drillBusy}
+            drillError={drillError}
             onReInterview={(topicLabel) => {
               sessionStorage.removeItem(STORED_ID);
               void handleStart({
@@ -244,6 +247,7 @@ export default function App() {
             initial={lastInput}
             onSubmit={(i) => void handleStart(i)}
             onHome={signedIn ? () => setScreen('home') : undefined}
+            signedIn={signedIn}
           />
         );
       case 'briefing':
