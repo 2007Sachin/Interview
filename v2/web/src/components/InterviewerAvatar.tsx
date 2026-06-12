@@ -66,6 +66,8 @@ export function InterviewerAvatar({ state, name, statusLabel, size = 'md', getLe
     <div className={`avatar avatar-${size}`} data-state={state}>
       <div className="avatar-stage" aria-hidden="true">
         <div className="avatar-glow" ref={glowRef} />
+        {/* slow aurora arc orbiting the core — part of the Beam family */}
+        <div className="avatar-arc" />
         {/* audio-reactive wrapper: scaled per-frame from the real amplitude */}
         <div className="avatar-react" ref={reactRef}>
           {/* ambient breathing core */}

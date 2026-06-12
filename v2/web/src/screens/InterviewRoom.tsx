@@ -297,7 +297,7 @@ export function InterviewRoom({ session, micWorks, resumed, onFinished }: Props)
         </div>
       )}
 
-      <div className="control-bar glass">
+      <div className="control-bar glass beam-top">
         <span className="ptt-wrap" data-phase={phase}>
           {phase === 'recording' && micMeter && <LevelRing read={micMeter.read} />}
           {phase === 'recording' ? (

@@ -297,6 +297,11 @@ select.field-input option {
   margin: 0;
   line-height: 1.12;
   letter-spacing: -0.01em;
+  /* luminous ink: white cooling into lavender toward the baseline */
+  color: transparent;
+  background: linear-gradient(180deg, var(--text-primary) 35%, #b9b4e8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 
 .room-orb {

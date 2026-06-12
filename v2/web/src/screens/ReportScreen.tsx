@@ -139,7 +139,7 @@ export function ReportScreen({ report, interviewerName, onRestart }: Props) {
             >
               <div className="pq-head">
                 <p className="pq-question">
-                  <span className="label">Q{i + 1}</span> {q.question}
+                  <span className="pq-num">Q·{String(i + 1).padStart(2, '0')}</span> {q.question}
                 </p>
                 <span className="pq-score">{scoreLabel(q.score)}</span>
               </div>

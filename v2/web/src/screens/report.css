@@ -204,6 +204,18 @@
   font-weight: 600;
 }
 
+/* Outlined mini-numerals: the ghost-numeral family at card scale */
+.pq-num {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(169, 167, 201, 0.5);
+}
+
 .pq-score {
   flex: none;
   font-size: var(--fs-small);
@@ -344,7 +356,8 @@
     -webkit-print-color-adjust: exact;
   }
 
-  .hero-score-num {
+  .hero-score-num,
+  .pq-num {
     color: #14132b;
     -webkit-text-stroke: 0;
   }

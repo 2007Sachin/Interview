@@ -59,5 +59,20 @@ no sound.
 ## Craft details
 
 Magenta text selection, aurora focus rings, styled scrollbars, designed error/empty states
-(“This session drifted off into the dark”), SVG favicon (a beam dot), print stylesheet that
-translates the direction to paper: ink on white with Beam rules in color.
+(“This session drifted off into the dark”), themed favicon + page title + meta description,
+print stylesheet that translates the direction to paper: ink on white with Beam rules in
+color.
+
+Second-pass refinements (stay on-direction when touching these):
+
+- **Beam energy drift**: every Beam carries a bright pulse that travels its length every
+  ~5s (transform-only). The Beam is alive, not a static rule.
+- **Aurora arc**: a thin two-color arc ring orbits the orb on a 24s loop — the Beam's
+  circular sibling. Static under reduced motion.
+- **Star field**: a sparse static dot layer behind the plasma blobs; the whole layer
+  twinkles on an 11s alternate loop.
+- **Luminous ink**: the interview question's glyphs cool from white into lavender via
+  background-clip — light passing through the text.
+- **Numeral family**: ghost numerals (briefing, room, score, 404) and outlined `Q·01`
+  mini-numerals on report cards, all tabular-nums.
+- Teal caret + violet accent-color in inputs; control bar wears a Beam top edge.

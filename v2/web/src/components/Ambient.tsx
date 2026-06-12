@@ -8,6 +8,7 @@ import './ambient.css';
 export function Ambient() {
   return (
     <div className="ambient" aria-hidden="true">
+      <span className="amb-stars" />
       <span className="amb-blob amb-base-a" />
       <span className="amb-blob amb-base-b" />
       <span className="amb-blob amb-mood amb-warm" />

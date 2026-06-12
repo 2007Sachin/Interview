@@ -8,6 +8,33 @@
   background: var(--bg-base);
 }
 
+/* A sparse star field: static dots, the whole layer twinkles very slowly */
+.amb-stars {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1.5px 1.5px at 8% 22%, rgba(241, 240, 251, 0.6), transparent 100%),
+    radial-gradient(1px 1px at 21% 64%, rgba(241, 240, 251, 0.4), transparent 100%),
+    radial-gradient(1.5px 1.5px at 33% 12%, rgba(94, 230, 200, 0.45), transparent 100%),
+    radial-gradient(1px 1px at 46% 81%, rgba(241, 240, 251, 0.35), transparent 100%),
+    radial-gradient(1px 1px at 58% 33%, rgba(241, 240, 251, 0.5), transparent 100%),
+    radial-gradient(1.5px 1.5px at 67% 70%, rgba(139, 123, 247, 0.45), transparent 100%),
+    radial-gradient(1px 1px at 76% 18%, rgba(241, 240, 251, 0.4), transparent 100%),
+    radial-gradient(1.5px 1.5px at 86% 52%, rgba(241, 240, 251, 0.55), transparent 100%),
+    radial-gradient(1px 1px at 93% 86%, rgba(94, 230, 200, 0.4), transparent 100%),
+    radial-gradient(1px 1px at 14% 91%, rgba(241, 240, 251, 0.35), transparent 100%);
+  animation: stars-twinkle 11s var(--ease-in-out) infinite alternate;
+}
+
+@keyframes stars-twinkle {
+  from {
+    opacity: 0.45;
+  }
+  to {
+    opacity: 0.95;
+  }
+}
+
 .amb-blob {
   position: absolute;
   border-radius: 50%;
@@ -101,7 +128,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .amb-blob {
+  .amb-blob,
+  .amb-stars {
     animation: none !important;
+  }
+
+  .amb-stars {
+    opacity: 0.7;
   }
 }

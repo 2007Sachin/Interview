@@ -66,6 +66,7 @@ button {
 
 /* ── The Beam: the signature element. Energy flows here. ────────────────── */
 .beam {
+  position: relative;
   display: block;
   width: 64px;
   height: 2px;
@@ -74,6 +75,29 @@ button {
   background: var(--beam);
   box-shadow: var(--beam-glow);
   margin: var(--space-3) 0 var(--space-5);
+  overflow: hidden;
+}
+
+/* Energy drift: a bright pulse travels the Beam every few seconds */
+.beam::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 22px;
+  background: linear-gradient(90deg, transparent, rgba(241, 240, 251, 0.95), transparent);
+  transform: translateX(-26px);
+  animation: beam-drift 5.5s var(--ease-in-out) infinite;
+}
+
+@keyframes beam-drift {
+  0%,
+  62% {
+    transform: translateX(-26px);
+  }
+  78%,
+  100% {
+    transform: translateX(110px);
+  }
 }
 
 .beam-wide {
@@ -212,6 +236,29 @@ a:focus-visible {
   letter-spacing: 0.14em;
   color: var(--text-muted);
   font-weight: 700;
+}
+
+/* Inputs carry the aurora too */
+input,
+textarea,
+select {
+  caret-color: var(--aurora-teal);
+  accent-color: var(--aurora-violet);
+}
+
+::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
+/* Numerals line up like instruments */
+.ghost-num,
+.room-qnum,
+.check-num,
+.hero-score-num,
+.pq-num,
+.pq-score {
+  font-variant-numeric: tabular-nums;
 }
 
 .error-note {

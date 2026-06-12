@@ -38,6 +38,26 @@
   will-change: opacity;
 }
 
+/* A slow aurora arc orbiting the core: two colored arcs on a masked ring */
+.avatar-arc {
+  position: absolute;
+  inset: 5%;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg 30deg,
+    rgba(94, 230, 200, 0.75) 80deg,
+    transparent 130deg 200deg,
+    rgba(139, 123, 247, 0.65) 252deg,
+    transparent 304deg 360deg
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+  animation: avatar-orbit 24s linear infinite;
+  opacity: 0.75;
+  pointer-events: none;
+}
+
 /* ── The plasma core (always breathing) ─────────────────────────────────── */
 .avatar-orb {
   position: relative;
@@ -298,6 +318,7 @@
 @media (prefers-reduced-motion: reduce) {
   .avatar-orb,
   .avatar-blob,
+  .avatar-arc,
   .wave,
   .ripple,
   .orbit {
