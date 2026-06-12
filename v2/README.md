@@ -173,23 +173,77 @@ Simulate each failure and confirm the recovery path (no dead-end screens anywher
 Run this once in the Supabase SQL editor:
 
 ```sql
+create table public.users (
+  id uuid primary key,
+  handle text not null unique,      -- email or college ID, the student's choice
+  name text not null default '',
+  created_at timestamptz not null default now()
+);
+
 create table public.sessions (
   id uuid primary key,
   created_at timestamptz not null default now(),
   mode text not null,
+  kind text not null default 'interview',       -- 'interview' | 'drill'
+  topic_key text not null default '',           -- groups repeat attempts ("skill:sql")
+  difficulty text not null default 'standard',  -- 'easy' | 'standard' | 'hard'
+  student_id uuid references public.users(id) on delete cascade,
   status text not null,
   report_status text not null default 'none',
-  cost_usd numeric not null default 0,
+  score numeric,                                -- promoted from the report
+  readiness text,                               -- promoted from the report
+  cost_usd numeric not null default 0,          -- attributed per student via student_id
   data jsonb not null
 );
 
--- The backend uses the service-role key, so lock the table down for anon users.
+-- Derived per-student/per-topic progress (score trend + readiness journey).
+create view public.student_progress as
+select student_id,
+       topic_key,
+       count(*)                                  as attempts,
+       avg(score)                                as avg_score,
+       max(score)                                as best_score,
+       (array_agg(readiness order by created_at desc))[1] as latest_readiness,
+       max(created_at)                           as last_attempt_at
+from sessions
+where student_id is not null and score is not null
+group by student_id, topic_key;
+
+-- The backend uses the service-role key, so lock the tables down for anon users.
 alter table public.sessions enable row level security;
+alter table public.users enable row level security;
 ```
 
 One row per interview. The whole session — brief, per-question transcripts, the coaching
-report and the cost log — lives in `data` (jsonb); `mode`, `status`, `report_status` and
-`cost_usd` are promoted to columns for cheap admin queries.
+report and the cost log — lives in `data` (jsonb); key fields are promoted to columns for
+cheap queries. Deleting a user cascades to their sessions (the server also deletes
+explicitly so the file backend behaves identically).
+
+### Identity model (v1)
+
+"Save your progress" is deliberately lightweight: the student enters an email or college ID
+**after** their first interview, the server issues a student id, and the browser keeps it in
+localStorage. There is no password and no email verification yet, so progress lives in the
+browser where the student practices; signing in from a second device with the same handle is
+refused rather than leaking someone's history. Production upgrade path: swap the
+`POST /api/student` handler for Supabase Auth email OTP — the storage schema already fits.
+
+## The progress loop (demo)
+
+1. Run backend + frontend (`TOTAL_QUESTIONS=2` makes this quick), finish one skill
+   interview on e.g. `sql`.
+2. On the report, use **Save your progress** (any email/ID). The interview is claimed.
+3. Click **Re-interview on sql** and finish round two. The new brief avoids round one's
+   questions (server passes them as exclusions), and the report gains a **Since last time**
+   note judging whether your previous "one thing to fix" improved.
+4. Go to **My interviews** → **Progress** on the sql row: score trend sparkline, readiness
+   journey, the "What changed" comparison, and per-attempt report links.
+5. Back home, hit **Weak spot drill**: a 3-question mini-interview generated only from your
+   accumulated weaknesses — finish it and it lands in history like any round.
+6. Difficulty: start a new interview and pick easy/standard/hard — hard probes much more
+   aggressively with follow-ups; the level is recorded in history.
+7. Privacy: delete a single interview (✕ on its row) or **Delete my data** for the full
+   cascade.
 
 ## Admin peek
 

@@ -1,4 +1,46 @@
+import { getStudentId } from './student';
+
 export type InterviewMode = 'resume' | 'capstone' | 'skill';
+
+export type Difficulty = 'easy' | 'standard' | 'hard';
+
+export type ReadinessLevel = 'needs practice' | 'developing' | 'interview-ready';
+
+export interface Student {
+  id: string;
+  handle: string;
+  name: string;
+  createdAt: string;
+  interviewsThisWeek?: number;
+  totalInterviews?: number;
+}
+
+export interface InterviewSummary {
+  id: string;
+  createdAt: string;
+  mode: InterviewMode;
+  kind: 'interview' | 'drill';
+  topicKey: string;
+  topicLabel: string;
+  difficulty: Difficulty;
+  status: 'active' | 'wrapup' | 'done';
+  score: number | null;
+  readinessLevel: ReadinessLevel | null;
+}
+
+export interface TopicProgress {
+  topicKey: string;
+  topicLabel: string;
+  attempts: {
+    id: string;
+    createdAt: string;
+    difficulty: Difficulty;
+    score: number;
+    readinessLevel: ReadinessLevel;
+    oneThingToFix: string;
+    progressNote: string | null;
+  }[];
+}
 
 export interface Brief {
   title: string;
@@ -11,9 +53,14 @@ export interface Brief {
 export interface SessionView {
   id: string;
   mode: InterviewMode;
+  kind: 'interview' | 'drill';
   status: 'active' | 'wrapup' | 'done';
   brief: Brief;
   interviewerName: string;
+  difficulty: Difficulty;
+  topicKey: string;
+  topicLabel: string;
+  claimed: boolean;
   currentPrompt: string;
   currentPromptIsFollowUp: boolean;
   questionIndex: number;
@@ -35,9 +82,10 @@ export interface AnswerResponse {
 export interface Report {
   overall: {
     score: number;
-    readinessLevel: 'needs practice' | 'developing' | 'interview-ready';
+    readinessLevel: ReadinessLevel;
     summary: string;
   };
+  progressNote: string | null;
   highlights: string[];
   oneThingToFix: { title: string; why: string; how: string };
   swot: {
@@ -62,6 +110,11 @@ export type ReportPoll =
   | { status: 'ready'; report: Report };
 
 const BASE = import.meta.env.VITE_API_BASE ?? '';
+
+function authHeaders(): Record<string, string> {
+  const id = getStudentId();
+  return id ? { 'X-Student-Id': id } : {};
+}
 
 export class ApiError extends Error {
   status: number;
@@ -92,26 +145,86 @@ export interface CreateSessionInput {
   level?: string;
   resumeText?: string;
   capstoneFile?: File;
+  difficulty?: Difficulty;
 }
 
 export async function createSession(input: CreateSessionInput): Promise<SessionView> {
   if (input.mode === 'capstone' && input.capstoneFile) {
     const form = new FormData();
     form.append('mode', 'capstone');
+    form.append('difficulty', input.difficulty ?? 'standard');
     form.append('file', input.capstoneFile);
-    return handle(await fetch(`${BASE}/api/session`, { method: 'POST', body: form }));
+    return handle(
+      await fetch(`${BASE}/api/session`, { method: 'POST', headers: authHeaders(), body: form }),
+    );
   }
   return handle(
     await fetch(`${BASE}/api/session`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({
         mode: input.mode,
         skill: input.skill,
         level: input.level,
         resumeText: input.resumeText,
+        difficulty: input.difficulty ?? 'standard',
       }),
     }),
+  );
+}
+
+/* ── Student identity & progress ───────────────────────────────────────── */
+
+export async function createStudent(handleText: string, name: string): Promise<Student> {
+  return handle(
+    await fetch(`${BASE}/api/student`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ handle: handleText, name }),
+    }),
+  );
+}
+
+export async function getMe(): Promise<Student> {
+  return handle(await fetch(`${BASE}/api/student/me`, { headers: authHeaders() }));
+}
+
+export async function listInterviews(): Promise<InterviewSummary[]> {
+  const res = await handle<{ interviews: InterviewSummary[] }>(
+    await fetch(`${BASE}/api/student/interviews`, { headers: authHeaders() }),
+  );
+  return res.interviews;
+}
+
+export async function getProgress(topicKey: string): Promise<TopicProgress> {
+  return handle(
+    await fetch(`${BASE}/api/student/progress?topic=${encodeURIComponent(topicKey)}`, {
+      headers: authHeaders(),
+    }),
+  );
+}
+
+export async function claimSession(id: string): Promise<void> {
+  await handle(
+    await fetch(`${BASE}/api/session/${id}/claim`, { method: 'POST', headers: authHeaders() }),
+  );
+}
+
+export async function createDrill(): Promise<SessionView> {
+  return handle(
+    await fetch(`${BASE}/api/student/drill`, { method: 'POST', headers: authHeaders() }),
+  );
+}
+
+export async function deleteInterview(id: string): Promise<void> {
+  await handle(
+    await fetch(`${BASE}/api/session/${id}`, { method: 'DELETE', headers: authHeaders() }),
+  );
+}
+
+export async function deleteAccount(): Promise<void> {
+  await handle(
+    await fetch(`${BASE}/api/student/me`, { method: 'DELETE', headers: authHeaders() }),
   );
 }
 

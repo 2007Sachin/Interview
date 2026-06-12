@@ -1,12 +1,11 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import type { Session } from '../types.js';
-import type { SessionStore } from './SessionStore.js';
+import type { Session, SessionSummary, Student } from '../types.js';
+import { toSummary, type SessionStore } from './SessionStore.js';
 
 /**
- * Production store. One row per session in the `sessions` table; the full
- * session (brief, transcripts, report, cost log) lives in the `data` jsonb
- * column, with a few promoted columns for cheap admin queries.
- * Schema: see "Supabase table schema" in /v2/README.md.
+ * Production store. One row per session in `sessions` (full session in the
+ * `data` jsonb column, key fields promoted for queries) and one row per
+ * student in `users`. Schema: see "Supabase table schema" in /v2/README.md.
  */
 export class SupabaseSessionStore implements SessionStore {
   private client: SupabaseClient;
@@ -23,8 +22,14 @@ export class SupabaseSessionStore implements SessionStore {
       id: session.id,
       created_at: session.createdAt,
       mode: session.mode,
+      kind: session.kind ?? 'interview',
+      topic_key: session.topicKey ?? session.mode,
+      difficulty: session.difficulty ?? 'standard',
+      student_id: session.studentId,
       status: session.status,
       report_status: session.reportStatus,
+      score: session.report?.overall.score ?? null,
+      readiness: session.report?.overall.readinessLevel ?? null,
       cost_usd: session.costUsd,
       data: session,
     };
@@ -48,6 +53,76 @@ export class SupabaseSessionStore implements SessionStore {
   async save(session: Session): Promise<void> {
     const { error } = await this.client.from('sessions').upsert(this.row(session));
     if (error) throw new Error(`supabase upsert failed: ${error.message}`);
+  }
+
+  async deleteSession(id: string, studentId: string | null): Promise<boolean> {
+    let query = this.client.from('sessions').delete({ count: 'exact' }).eq('id', id);
+    query = studentId === null ? query.is('student_id', null) : query.eq('student_id', studentId);
+    const { error, count } = await query;
+    if (error) throw new Error(`supabase delete failed: ${error.message}`);
+    return (count ?? 0) > 0;
+  }
+
+  async createStudent(student: Student): Promise<void> {
+    const { error } = await this.client.from('users').insert({
+      id: student.id,
+      handle: student.handle,
+      name: student.name,
+      created_at: student.createdAt,
+    });
+    if (error) throw new Error(`supabase user insert failed: ${error.message}`);
+  }
+
+  async getStudent(id: string): Promise<Student | null> {
+    const { data, error } = await this.client.from('users').select('*').eq('id', id).maybeSingle();
+    if (error) throw new Error(`supabase user select failed: ${error.message}`);
+    return data
+      ? { id: data.id, handle: data.handle, name: data.name ?? '', createdAt: data.created_at }
+      : null;
+  }
+
+  async getStudentByHandle(handle: string): Promise<Student | null> {
+    const { data, error } = await this.client
+      .from('users')
+      .select('*')
+      .ilike('handle', handle)
+      .maybeSingle();
+    if (error) throw new Error(`supabase user select failed: ${error.message}`);
+    return data
+      ? { id: data.id, handle: data.handle, name: data.name ?? '', createdAt: data.created_at }
+      : null;
+  }
+
+  async listByStudent(studentId: string): Promise<SessionSummary[]> {
+    const { data, error } = await this.client
+      .from('sessions')
+      .select('data')
+      .eq('student_id', studentId)
+      .order('created_at', { ascending: false })
+      .limit(200);
+    if (error) throw new Error(`supabase list failed: ${error.message}`);
+    return (data ?? []).map((r) => toSummary(r.data as Session));
+  }
+
+  async listTopicSessions(studentId: string, topicKey: string): Promise<Session[]> {
+    const { data, error } = await this.client
+      .from('sessions')
+      .select('data')
+      .eq('student_id', studentId)
+      .eq('topic_key', topicKey)
+      .order('created_at', { ascending: true })
+      .limit(100);
+    if (error) throw new Error(`supabase topic list failed: ${error.message}`);
+    return (data ?? []).map((r) => r.data as Session);
+  }
+
+  async deleteStudent(studentId: string): Promise<void> {
+    // sessions cascade via FK, but delete explicitly so file/supabase behave
+    // identically even if the FK is missing.
+    const { error: sErr } = await this.client.from('sessions').delete().eq('student_id', studentId);
+    if (sErr) throw new Error(`supabase cascade failed: ${sErr.message}`);
+    const { error } = await this.client.from('users').delete().eq('id', studentId);
+    if (error) throw new Error(`supabase user delete failed: ${error.message}`);
   }
 
   async stats(): Promise<{ day: string; interviews: number; avgCostUsd: number }[]> {

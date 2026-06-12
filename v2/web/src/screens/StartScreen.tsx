@@ -1,5 +1,11 @@
 import { useState } from 'react';
-import type { CreateSessionInput, InterviewMode } from '../lib/api';
+import type { CreateSessionInput, Difficulty, InterviewMode } from '../lib/api';
+
+const DIFFICULTY_CHIPS: { value: Difficulty; label: string; hint: string }[] = [
+  { value: 'easy', label: 'Easy', hint: 'Warm-up depth, gentle pace' },
+  { value: 'standard', label: 'Standard', hint: 'Typical entry-level depth' },
+  { value: 'hard', label: 'Hard', hint: 'Demanding, real-interview probing' },
+];
 
 const MODE_CHIPS: { mode: InterviewMode; label: string }[] = [
   { mode: 'skill', label: 'A skill interview' },
@@ -13,14 +19,17 @@ interface Props {
   /** Pre-fills the form, e.g. "Interview again" from the report. */
   initial?: CreateSessionInput;
   onSubmit: (input: CreateSessionInput) => void;
+  /** Present when the student has saved progress — link back to My Interviews. */
+  onHome?: () => void;
 }
 
-export function StartScreen({ busy, error, initial, onSubmit }: Props) {
+export function StartScreen({ busy, error, initial, onSubmit, onHome }: Props) {
   const [mode, setMode] = useState<InterviewMode>(initial?.mode ?? 'skill');
   const [skill, setSkill] = useState(initial?.skill ?? '');
   const [level, setLevel] = useState(initial?.level ?? 'beginner');
   const [resumeText, setResumeText] = useState(initial?.resumeText ?? '');
   const [file, setFile] = useState<File | null>(initial?.capstoneFile ?? null);
+  const [difficulty, setDifficulty] = useState<Difficulty>(initial?.difficulty ?? 'standard');
 
   const ready =
     mode === 'skill' ? skill.trim() !== '' : mode === 'resume' ? resumeText.trim() !== '' : !!file;
@@ -33,11 +42,21 @@ export function StartScreen({ busy, error, initial, onSubmit }: Props) {
       level,
       resumeText: resumeText.trim(),
       capstoneFile: file ?? undefined,
+      difficulty,
     });
   }
 
   return (
     <main className="screen enter">
+      {onHome && (
+        <button
+          className="btn btn-quiet"
+          style={{ alignSelf: 'flex-start', marginBottom: 'var(--space-4)' }}
+          onClick={onHome}
+        >
+          ← My interviews
+        </button>
+      )}
       <p className="screen-kicker">Interview practice</p>
       <h1>What are you practicing for?</h1>
       <span className="beam" aria-hidden="true" />
@@ -115,6 +134,25 @@ export function StartScreen({ busy, error, initial, onSubmit }: Props) {
             )}
           </label>
         )}
+
+        <div className="field">
+          <span className="label">How tough should this round be?</span>
+          <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }} role="radiogroup" aria-label="Difficulty">
+            {DIFFICULTY_CHIPS.map((d) => (
+              <button
+                key={d.value}
+                className={`chip ${difficulty === d.value ? 'selected' : ''}`}
+                style={{ fontSize: 'var(--fs-small)', padding: 'var(--space-2) var(--space-4)' }}
+                role="radio"
+                aria-checked={difficulty === d.value}
+                data-tip={d.hint}
+                onClick={() => setDifficulty(d.value)}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <button className="btn btn-primary" onClick={submit} disabled={!ready || busy}>
           {busy ? 'Building your interview…' : 'Set up my interview'}

@@ -1,13 +1,23 @@
 import { randomUUID } from 'node:crypto';
 import { config } from './config.js';
 import { emptyCost, logSessionCost } from './cost.js';
-import { generateBrief } from './llm/brief.js';
+import { generateBrief, generateDrillBrief } from './llm/brief.js';
 import { generateReport } from './llm/report.js';
 import { decideTurn } from './llm/turn.js';
 import type { GroqClient } from './llm/groq.js';
 import { sanitizeForPrompt } from './sanitize.js';
 import type { SessionStore } from './store/SessionStore.js';
-import type { AnswerResponse, InterviewMode, Session } from './types.js';
+import type { AnswerResponse, Difficulty, InterviewMode, Session } from './types.js';
+
+export const DRILL_QUESTIONS = 3;
+
+export interface CreateSessionOptions {
+  mode: InterviewMode;
+  material: string;
+  label: string;
+  difficulty: Difficulty;
+  studentId: string | null;
+}
 
 export class InterviewEngine {
   constructor(
@@ -15,27 +25,97 @@ export class InterviewEngine {
     private groq: GroqClient,
   ) {}
 
-  async createSession(mode: InterviewMode, material: string, label: string): Promise<Session> {
-    const cleanMaterial = sanitizeForPrompt(material);
-    const cost = emptyCost();
-    const brief = await generateBrief(this.groq, cost, mode, cleanMaterial, label);
-    const session: Session = {
+  /** Normalized key so repeat attempts on the same topic group together. */
+  static topicKey(mode: InterviewMode, label: string): string {
+    return mode === 'skill' ? `skill:${label.trim().toLowerCase()}` : mode;
+  }
+
+  private blankSession(partial: Pick<Session, 'mode' | 'kind' | 'inputSummary' | 'topicKey' | 'difficulty' | 'totalQuestions' | 'studentId' | 'brief' | 'cost'>): Session {
+    return {
       id: randomUUID(),
       createdAt: new Date().toISOString(),
-      mode,
-      inputSummary: label,
-      brief,
       status: 'active',
       currentQuestionIndex: 0,
       followUpUsedForCurrent: false,
-      currentPrompt: brief.questionBank[0] ?? '',
+      currentPrompt: partial.brief.questionBank[0] ?? '',
       currentPromptIsFollowUp: false,
       turns: [],
       report: null,
       reportStatus: 'none',
-      cost,
       costUsd: 0,
+      ...partial,
     };
+  }
+
+  /** Questions this student has already been asked on a topic. */
+  private async priorQuestions(studentId: string | null, topicKey: string): Promise<string[]> {
+    if (!studentId) return [];
+    const prior = await this.store.listTopicSessions(studentId, topicKey);
+    return prior.flatMap((s) => s.brief.questionBank).slice(-40);
+  }
+
+  async createSession(opts: CreateSessionOptions): Promise<Session> {
+    const cleanMaterial = sanitizeForPrompt(opts.material);
+    const cost = emptyCost();
+    const topicKey = InterviewEngine.topicKey(opts.mode, opts.label);
+    const excludeQuestions = await this.priorQuestions(opts.studentId, topicKey);
+    const brief = await generateBrief(this.groq, cost, opts.mode, cleanMaterial, opts.label, {
+      difficulty: opts.difficulty,
+      total: config.totalQuestions,
+      excludeQuestions,
+    });
+    const session = this.blankSession({
+      mode: opts.mode,
+      kind: 'interview',
+      inputSummary: opts.label,
+      topicKey,
+      difficulty: opts.difficulty,
+      totalQuestions: config.totalQuestions,
+      studentId: opts.studentId,
+      brief,
+      cost,
+    });
+    await this.store.create(session);
+    return session;
+  }
+
+  /**
+   * Weak-spot drill: 3 questions generated only from the student's
+   * accumulated weaknesses / one-thing-to-fix history.
+   */
+  async createDrill(studentId: string): Promise<Session | null> {
+    const summaries = await this.store.listByStudent(studentId);
+    const weaknesses: string[] = [];
+    const asked: string[] = [];
+    for (const summary of summaries.slice(0, 12)) {
+      const full = await this.store.get(summary.id);
+      if (!full?.report) continue;
+      asked.push(...full.brief.questionBank);
+      weaknesses.push(
+        `From "${full.inputSummary}": fix = ${full.report.oneThingToFix.title} (${full.report.oneThingToFix.why})`,
+        ...full.report.swot.weaknesses.map((w) => `From "${full.inputSummary}": weakness = ${w}`),
+      );
+    }
+    if (weaknesses.length === 0) return null;
+
+    const cost = emptyCost();
+    const brief = await generateDrillBrief(
+      this.groq,
+      cost,
+      sanitizeForPrompt(weaknesses.slice(0, 20).join('\n'), 6000),
+      { difficulty: 'standard', total: DRILL_QUESTIONS, excludeQuestions: asked.slice(-40) },
+    );
+    const session = this.blankSession({
+      mode: 'skill',
+      kind: 'drill',
+      inputSummary: 'Weak spot drill',
+      topicKey: 'drill',
+      difficulty: 'standard',
+      totalQuestions: DRILL_QUESTIONS,
+      studentId,
+      brief,
+      cost,
+    });
     await this.store.create(session);
     return session;
   }
@@ -61,7 +141,7 @@ export class InterviewEngine {
     transcript: string,
     source: 'audio' | 'text',
   ): Promise<AnswerResponse> {
-    const total = config.totalQuestions;
+    const total = session.totalQuestions ?? config.totalQuestions;
 
     if (session.status !== 'active') {
       return {
@@ -105,6 +185,7 @@ export class InterviewEngine {
       session.currentPrompt,
       cleaned,
       followUpAllowed,
+      session.difficulty ?? 'standard',
     );
 
     let response: AnswerResponse;
@@ -165,6 +246,16 @@ export class InterviewEngine {
     this.startReport(id);
   }
 
+  /** oneThingToFix from the previous completed attempt on the same topic. */
+  private async previousFix(session: Session): Promise<string | null> {
+    if (!session.studentId || session.kind === 'drill') return null;
+    const prior = await this.store.listTopicSessions(session.studentId, session.topicKey);
+    const previous = prior
+      .filter((s) => s.id !== session.id && s.report)
+      .at(-1);
+    return previous?.report?.oneThingToFix.title ?? null;
+  }
+
   private reportsInFlight = new Set<string>();
 
   /** Kick off report generation in the background; idempotent. */
@@ -179,11 +270,12 @@ export class InterviewEngine {
         }
         session.reportStatus = 'generating';
         await this.store.save(session);
-        const report = await generateReport(this.groq, session.cost, session);
+        const previousFix = await this.previousFix(session);
+        const report = await generateReport(this.groq, session.cost, session, previousFix);
         session.report = report;
         session.reportStatus = 'ready';
         session.status = 'done';
-        session.costUsd = logSessionCost(session.id, session.cost);
+        session.costUsd = logSessionCost(session.id, session.cost, session.studentId);
         await this.store.save(session);
       } catch (err) {
         console.error(`[report] background generation failed for ${id}:`, err);

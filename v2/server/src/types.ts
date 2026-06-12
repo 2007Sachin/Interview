@@ -1,5 +1,31 @@
 export type InterviewMode = 'resume' | 'capstone' | 'skill';
 
+export type Difficulty = 'easy' | 'standard' | 'hard';
+
+/** A drill is a 3-question mini-interview built only from past weaknesses. */
+export type SessionKind = 'interview' | 'drill';
+
+export interface Student {
+  id: string;
+  /** Email or college ID — whatever the student typed. Unique per store. */
+  handle: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface SessionSummary {
+  id: string;
+  createdAt: string;
+  mode: InterviewMode;
+  kind: SessionKind;
+  topicKey: string;
+  topicLabel: string;
+  difficulty: Difficulty;
+  status: SessionStatus;
+  score: number | null;
+  readinessLevel: ReadinessLevel | null;
+}
+
 export interface Brief {
   title: string;
   summary: string;
@@ -45,6 +71,12 @@ export interface Report {
     howToImprove: string;
   }[];
   partial: boolean;
+  /**
+   * Coach-toned comparison with the previous attempt on this topic
+   * ("Last time: rambling answers. This time: tighter. Fixed."). Null on a
+   * first attempt.
+   */
+  progressNote: string | null;
 }
 
 export type SessionStatus = 'active' | 'wrapup' | 'done';
@@ -53,7 +85,13 @@ export interface Session {
   id: string;
   createdAt: string;
   mode: InterviewMode;
+  kind: SessionKind;
   inputSummary: string;
+  /** Normalized topic for grouping attempts (e.g. "sql", "resume"). */
+  topicKey: string;
+  difficulty: Difficulty;
+  totalQuestions: number;
+  studentId: string | null;
   brief: Brief;
   status: SessionStatus;
   currentQuestionIndex: number;

@@ -9,8 +9,12 @@ function transcriptText(session: Session): string {
     .join('\n\n');
 }
 
+function totalFor(session: Session): number {
+  return session.totalQuestions ?? config.totalQuestions;
+}
+
 function fallbackReport(session: Session): Report {
-  const partial = session.turns.length < config.totalQuestions;
+  const partial = session.turns.length < totalFor(session);
   return {
     overall: {
       score: 50,
@@ -35,6 +39,7 @@ function fallbackReport(session: Session): Report {
         howToImprove: 'Try this question again in your next round.',
       })),
     partial,
+    progressNote: null,
   };
 }
 
@@ -44,10 +49,16 @@ export async function generateReport(
   groq: GroqClient,
   cost: CostLog,
   session: Session,
+  /** oneThingToFix from the student's previous attempt on this topic, if any. */
+  previousFix: string | null = null,
 ): Promise<Report> {
-  const partial = session.currentQuestionIndex < config.totalQuestions - 1 || session.turns.length === 0;
+  const total = totalFor(session);
+  const partial = session.currentQuestionIndex < total - 1 || session.turns.length === 0;
   const answered = session.turns.filter((t) => !t.isFollowUp).length;
-  const prompt = `You are ${config.interviewerName}, a warm interview coach. A college student just finished a practice interview${partial ? ` early, after ${answered} of ${config.totalQuestions} questions — judge only what they answered and never penalize stopping early` : ''}. Write their coaching report.
+  const progressSection = previousFix
+    ? `\nLAST ATTEMPT'S "ONE THING TO FIX" ON THIS TOPIC: "${previousFix}"\nAdd a "progressNote" key: ONE coach-toned sentence judging honestly whether this transcript shows that thing improved (e.g. "Last time: rambling answers. This time: noticeably tighter — fixed." or "Still working on concrete examples — keep that as your focus."). Anchor it to the transcript.\n`
+    : '';
+  const prompt = `You are ${config.interviewerName}, a warm interview coach. A college student just finished a practice interview${partial ? ` early, after ${answered} of ${total} questions — judge only what they answered and never penalize stopping early` : ''}. Write their coaching report.
 
 INTERVIEW BRIEF:
 Title: ${session.brief.title}
@@ -56,14 +67,14 @@ Rubric: ${session.brief.rubric.join('; ')}
 
 FULL TRANSCRIPT:
 ${transcriptText(session) || '(no answers recorded)'}
-
+${progressSection}
 Respond as JSON with exactly this shape:
 {
   "overall": { "score": 0-100, "readinessLevel": "needs practice" | "developing" | "interview-ready", "summary": "3-4 encouraging coach sentences" },
   "highlights": ["2-3 specific things done WELL, each quoting or directly referencing something the student actually said"],
   "oneThingToFix": { "title": "the single highest-impact improvement", "why": "why it matters, anchored to their answers", "how": "concrete practice steps" },
   "swot": { "strengths": [...], "weaknesses": [...], "opportunities": [...], "threats": [...] },
-  "perQuestion": [ for each main question answered: { "question": "...", "answerSummary": "...", "score": 0-100, "feedback": "...", "howToImprove": "..." } ]
+  "perQuestion": [ for each main question answered: { "question": "...", "answerSummary": "...", "score": 0-100, "feedback": "...", "howToImprove": "..." } ]${previousFix ? ',\n  "progressNote": "one sentence as instructed above"' : ''}
 }
 
 Rules: every SWOT point (2-4 per quadrant) must be anchored to something specific the student said — no generic filler. Coach tone throughout: honest about gaps but framed as next steps, never as judgment. Output ONLY the JSON object.`;
@@ -126,5 +137,6 @@ Rules: every SWOT point (2-4 per quadrant) must be anchored to something specifi
     },
     perQuestion: perQuestion.length ? perQuestion : fallback.perQuestion,
     partial,
+    progressNote: previousFix ? asString(obj.progressNote, '') || null : null,
   };
 }

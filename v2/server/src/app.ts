@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import express from 'express';
 import multer from 'multer';
 import { config } from './config.js';
@@ -5,21 +6,27 @@ import { InterviewEngine } from './engine.js';
 import type { GroqClient } from './llm/groq.js';
 import { sanitizeForPrompt } from './sanitize.js';
 import type { SessionStore } from './store/SessionStore.js';
-import type { InterviewMode } from './types.js';
+import type { Difficulty, InterviewMode, Session, Student } from './types.js';
 
 const MODES: InterviewMode[] = ['resume', 'capstone', 'skill'];
+const DIFFICULTIES: Difficulty[] = ['easy', 'standard', 'hard'];
 
-function publicSession(session: NonNullable<Awaited<ReturnType<InterviewEngine['getSession']>>>) {
+function publicSession(session: Session) {
   return {
     id: session.id,
     mode: session.mode,
+    kind: session.kind ?? 'interview',
     status: session.status,
     brief: session.brief,
     interviewerName: config.interviewerName,
+    difficulty: session.difficulty ?? 'standard',
+    topicKey: session.topicKey ?? session.mode,
+    topicLabel: session.inputSummary,
+    claimed: session.studentId !== null,
     currentPrompt: session.currentPrompt,
     currentPromptIsFollowUp: session.currentPromptIsFollowUp,
     questionIndex: session.currentQuestionIndex,
-    total: config.totalQuestions,
+    total: session.totalQuestions ?? config.totalQuestions,
     lastTranscript: session.turns.at(-1)?.transcript ?? '',
     reportStatus: session.reportStatus,
   };
@@ -38,8 +45,8 @@ export function createApp(store: SessionStore, groq: GroqClient): express.Expres
   if (config.frontendOrigin) {
     app.use((req, res, next) => {
       res.setHeader('Access-Control-Allow-Origin', config.frontendOrigin);
-      res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Student-Id');
       if (req.method === 'OPTIONS') {
         res.sendStatus(204);
         return;
@@ -48,12 +55,23 @@ export function createApp(store: SessionStore, groq: GroqClient): express.Expres
     });
   }
 
+  /** The student identified by the X-Student-Id header, or null. */
+  async function studentFrom(req: express.Request): Promise<Student | null> {
+    const id = req.header('x-student-id');
+    if (!id || !/^[a-zA-Z0-9-]+$/.test(id)) return null;
+    try {
+      return await store.getStudent(id);
+    } catch {
+      return null;
+    }
+  }
+
   app.get('/api/health', (_req, res) => {
     res.json({ ok: true, interviewerName: config.interviewerName });
   });
 
   // Create a session. Accepts JSON (skill/resume modes) or multipart with a
-  // PDF file (capstone mode).
+  // PDF file (capstone mode). First interview stays signup-free.
   app.post('/api/session', upload.single('file'), async (req, res) => {
     try {
       const body = req.body as Record<string, string | undefined>;
@@ -62,6 +80,10 @@ export function createApp(store: SessionStore, groq: GroqClient): express.Expres
         res.status(400).json({ error: 'mode must be one of resume, capstone, skill' });
         return;
       }
+      const difficulty = DIFFICULTIES.includes(body.difficulty as Difficulty)
+        ? (body.difficulty as Difficulty)
+        : 'standard';
+      const student = await studentFrom(req);
 
       let material = '';
       let label = '';
@@ -104,7 +126,13 @@ export function createApp(store: SessionStore, groq: GroqClient): express.Expres
         label = 'your capstone project';
       }
 
-      const session = await engine.createSession(mode, material, label);
+      const session = await engine.createSession({
+        mode,
+        material,
+        label,
+        difficulty,
+        studentId: student?.id ?? null,
+      });
       res.json(publicSession(session));
     } catch (err) {
       console.error('[api] create session failed:', err);
@@ -113,7 +141,7 @@ export function createApp(store: SessionStore, groq: GroqClient): express.Expres
   });
 
   app.get('/api/session/:id', async (req, res) => {
-    const session = await engine.getSession(req.params.id);
+    const session = await engine.getSession(String(req.params.id));
     if (!session) {
       res.status(404).json({ error: 'session not found' });
       return;
@@ -162,17 +190,17 @@ export function createApp(store: SessionStore, groq: GroqClient): express.Expres
   });
 
   app.post('/api/session/:id/end', async (req, res) => {
-    const session = await engine.getSession(req.params.id);
+    const session = await engine.getSession(String(req.params.id));
     if (!session) {
       res.status(404).json({ error: 'session not found' });
       return;
     }
-    await engine.endSession(req.params.id);
+    await engine.endSession(session.id);
     res.json({ ok: true });
   });
 
   app.get('/api/session/:id/report', async (req, res) => {
-    const session = await engine.getSession(req.params.id);
+    const session = await engine.getSession(String(req.params.id));
     if (!session) {
       res.status(404).json({ error: 'session not found' });
       return;
@@ -193,7 +221,7 @@ export function createApp(store: SessionStore, groq: GroqClient): express.Expres
   });
 
   app.post('/api/session/:id/report/retry', async (req, res) => {
-    const session = await engine.getSession(req.params.id);
+    const session = await engine.getSession(String(req.params.id));
     if (!session) {
       res.status(404).json({ error: 'session not found' });
       return;
@@ -203,6 +231,163 @@ export function createApp(store: SessionStore, groq: GroqClient): express.Expres
       await store.save(session);
       engine.startReport(session.id);
     }
+    res.json({ ok: true });
+  });
+
+  /* ── Student identity & progress ──────────────────────────────────────── */
+
+  // "Save your progress": lightweight identity by email or college ID.
+  // Same-browser continuation; see README for the Supabase-OTP upgrade path.
+  app.post('/api/student', async (req, res) => {
+    try {
+      const body = req.body as Record<string, unknown>;
+      const handle = sanitizeForPrompt(typeof body.handle === 'string' ? body.handle : '', 120);
+      const name = sanitizeForPrompt(typeof body.name === 'string' ? body.name : '', 80);
+      if (!handle) {
+        res.status(400).json({ error: 'enter your email or college ID' });
+        return;
+      }
+      const existing = await store.getStudentByHandle(handle);
+      if (existing) {
+        const current = await studentFrom(req);
+        if (current?.id === existing.id) {
+          res.json(existing);
+          return;
+        }
+        res.status(409).json({
+          error:
+            "That email/ID is already saving progress on another device. For now, progress lives in the browser where you practice — use a different ID here.",
+        });
+        return;
+      }
+      const student: Student = {
+        id: randomUUID(),
+        handle,
+        name,
+        createdAt: new Date().toISOString(),
+      };
+      await store.createStudent(student);
+      res.json(student);
+    } catch (err) {
+      console.error('[api] create student failed:', err);
+      res.status(502).json({ error: 'Could not save your progress just now — try again.' });
+    }
+  });
+
+  // Profile + streak ("3 interviews this week" — coach-toned, never compared).
+  app.get('/api/student/me', async (req, res) => {
+    const student = await studentFrom(req);
+    if (!student) {
+      res.status(401).json({ error: 'not signed in' });
+      return;
+    }
+    const interviews = await store.listByStudent(student.id);
+    const weekAgo = Date.now() - 7 * 24 * 3600 * 1000;
+    const thisWeek = interviews.filter((s) => Date.parse(s.createdAt) >= weekAgo).length;
+    res.json({ ...student, interviewsThisWeek: thisWeek, totalInterviews: interviews.length });
+  });
+
+  app.get('/api/student/interviews', async (req, res) => {
+    const student = await studentFrom(req);
+    if (!student) {
+      res.status(401).json({ error: 'not signed in' });
+      return;
+    }
+    res.json({ interviews: await store.listByStudent(student.id) });
+  });
+
+  // Per-topic progress: score trend, readiness journey, what changed.
+  app.get('/api/student/progress', async (req, res) => {
+    const student = await studentFrom(req);
+    if (!student) {
+      res.status(401).json({ error: 'not signed in' });
+      return;
+    }
+    const topicKey = String(req.query.topic ?? '');
+    if (!topicKey) {
+      res.status(400).json({ error: 'topic is required' });
+      return;
+    }
+    const sessions = (await store.listTopicSessions(student.id, topicKey)).filter(
+      (s) => s.report !== null,
+    );
+    res.json({
+      topicKey,
+      topicLabel: sessions.at(-1)?.inputSummary ?? topicKey,
+      attempts: sessions.map((s) => ({
+        id: s.id,
+        createdAt: s.createdAt,
+        difficulty: s.difficulty ?? 'standard',
+        score: s.report?.overall.score ?? 0,
+        readinessLevel: s.report?.overall.readinessLevel ?? 'developing',
+        oneThingToFix: s.report?.oneThingToFix.title ?? '',
+        progressNote: s.report?.progressNote ?? null,
+      })),
+    });
+  });
+
+  // Attach an anonymous session to a student ("save your progress" post-interview).
+  app.post('/api/session/:id/claim', async (req, res) => {
+    const student = await studentFrom(req);
+    if (!student) {
+      res.status(401).json({ error: 'not signed in' });
+      return;
+    }
+    const session = await engine.getSession(String(req.params.id));
+    if (!session) {
+      res.status(404).json({ error: 'session not found' });
+      return;
+    }
+    if (session.studentId && session.studentId !== student.id) {
+      res.status(403).json({ error: 'this interview belongs to someone else' });
+      return;
+    }
+    session.studentId = student.id;
+    await store.save(session);
+    res.json({ ok: true });
+  });
+
+  // Weak-spot drill: 3 questions from accumulated weaknesses.
+  app.post('/api/student/drill', async (req, res) => {
+    try {
+      const student = await studentFrom(req);
+      if (!student) {
+        res.status(401).json({ error: 'not signed in' });
+        return;
+      }
+      const session = await engine.createDrill(student.id);
+      if (!session) {
+        res.status(400).json({
+          error: 'Finish one full interview first — the drill is built from your reports.',
+        });
+        return;
+      }
+      res.json(publicSession(session));
+    } catch (err) {
+      console.error('[api] drill failed:', err);
+      res.status(502).json({ error: 'Could not build your drill. Give it a second and try again.' });
+    }
+  });
+
+  /* ── Privacy: students can delete an interview or their whole account ──── */
+
+  app.delete('/api/session/:id', async (req, res) => {
+    const student = await studentFrom(req);
+    const deleted = await store.deleteSession(String(req.params.id), student?.id ?? null);
+    if (!deleted) {
+      res.status(404).json({ error: 'interview not found (or not yours to delete)' });
+      return;
+    }
+    res.json({ ok: true });
+  });
+
+  app.delete('/api/student/me', async (req, res) => {
+    const student = await studentFrom(req);
+    if (!student) {
+      res.status(401).json({ error: 'not signed in' });
+      return;
+    }
+    await store.deleteStudent(student.id);
     res.json({ ok: true });
   });
 

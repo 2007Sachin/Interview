@@ -32,10 +32,14 @@ export function estimateUsd(cost: CostLog): number {
   return Math.round(usd * 1e6) / 1e6;
 }
 
-export function logSessionCost(sessionId: string, cost: CostLog): number {
+export function logSessionCost(
+  sessionId: string,
+  cost: CostLog,
+  studentId: string | null = null,
+): number {
   const usd = estimateUsd(cost);
   console.log(
-    `[cost] session=${sessionId} stt=${cost.sttSeconds.toFixed(1)}s ` +
+    `[cost] session=${sessionId} student=${studentId ?? 'anonymous'} stt=${cost.sttSeconds.toFixed(1)}s ` +
       `fast=${cost.fastInputTokens}in/${cost.fastOutputTokens}out ` +
       `smart=${cost.smartInputTokens}in/${cost.smartOutputTokens}out ` +
       `estimate=$${usd.toFixed(6)}`,
