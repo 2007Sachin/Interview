@@ -1,46 +1,71 @@
-/* Design tokens — the only place colors, type and motion values are defined. */
+/* ───────────────────────────────────────────────────────────────────────────
+   AURORA design tokens — the only place colors, type and motion are defined.
+   See /v2/DESIGN_DIRECTION.md. Max 4 colors + neutrals; the magenta accent
+   appears at most 5 times per screen.
+   ─────────────────────────────────────────────────────────────────────────── */
 :root {
-  /* Background layers: soft off-white, calm and professional */
-  --bg-base: #faf9f6;
-  --bg-raised: #ffffff;
-  --bg-sunken: #f1efe9;
-  --bg-overlay: rgba(28, 27, 51, 0.45);
+  /* Canvas: deep-space layers */
+  --bg-base: #0a0b16;
+  --bg-raised: #11132a;
+  --bg-sunken: #181b38;
+  --bg-overlay: rgba(5, 6, 14, 0.72);
 
-  /* Text hierarchy */
-  --text-primary: #1c1b33;
-  --text-secondary: #4c4a66;
-  --text-muted: #8a87a3;
-  --text-on-primary: #ffffff;
+  /* Text hierarchy on dark */
+  --text-primary: #f1f0fb;
+  --text-secondary: #a9a7c9;
+  --text-muted: #8385ae; /* 5.3:1 on --bg-base — AA for the small labels */
+  --text-on-primary: #0a0b16;
 
-  /* Brand: deep indigo primary, warm amber accent */
-  --primary: #3b3486;
-  --primary-hover: #2e2870;
-  --primary-soft: #e9e7f7;
-  --accent: #e8a33d;
-  --accent-soft: #fdf3e0;
+  /* The three aurora colors */
+  --aurora-teal: #5ee6c8;
+  --aurora-violet: #8b7bf7;
+  --aurora-magenta: #f566c3; /* THE accent — use sparingly */
 
-  /* Semantic */
-  --success: #2e7d5b;
-  --success-soft: #e3f2ea;
-  --warning: #b3621a;
-  --warning-soft: #fbeede;
-  --danger: #b3403a;
-  --danger-soft: #f9e7e6;
+  /* Semantic mapping (kept for existing rules) */
+  --primary: var(--aurora-violet);
+  --primary-hover: #a193ff;
+  --primary-soft: rgba(139, 123, 247, 0.16);
+  --accent: var(--aurora-teal);
+  --accent-soft: rgba(94, 230, 200, 0.14);
+  --success: var(--aurora-teal);
+  --success-soft: rgba(94, 230, 200, 0.12);
+  --warning: var(--aurora-violet);
+  --warning-soft: rgba(139, 123, 247, 0.14);
+  --danger: var(--aurora-magenta);
+  --danger-soft: rgba(245, 102, 195, 0.14);
 
-  /* Borders & shadows */
-  --border: #e4e1d8;
-  --border-strong: #cfcabb;
-  --shadow-card: 0 1px 3px rgba(28, 27, 51, 0.06), 0 8px 24px rgba(28, 27, 51, 0.07);
-  --shadow-pop: 0 4px 12px rgba(28, 27, 51, 0.12), 0 16px 40px rgba(28, 27, 51, 0.14);
+  /* The Beam — the signature element */
+  --beam: linear-gradient(
+    90deg,
+    var(--aurora-teal) 0%,
+    var(--aurora-violet) 55%,
+    var(--aurora-magenta) 100%
+  );
+  --beam-glow: 0 0 12px rgba(139, 123, 247, 0.55);
 
-  /* Type scale */
-  --font-body: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  --fs-display: clamp(1.6rem, 1.2rem + 1.6vw, 2.4rem); /* questions */
-  --fs-title: 1.45rem;
-  --fs-subtitle: 1.15rem;
-  --fs-body: 1rem; /* transcripts */
-  --fs-small: 0.875rem;
-  --fs-label: 0.78rem; /* muted status labels */
+  /* Borders & shadows: hairlines of light, depth from darkness */
+  --border: rgba(169, 167, 201, 0.16);
+  --border-strong: rgba(169, 167, 201, 0.32);
+  --shadow-card: 0 1px 0 rgba(241, 240, 251, 0.04) inset, 0 18px 50px rgba(0, 0, 0, 0.5);
+  --shadow-pop: 0 1px 0 rgba(241, 240, 251, 0.07) inset, 0 24px 70px rgba(0, 0, 0, 0.65);
+
+  /* Dark glass: floating control bar + status pill ONLY */
+  --glass-bg: rgba(17, 19, 42, 0.66);
+  --glass-border: rgba(169, 167, 201, 0.22);
+
+  /* Focus ring */
+  --focus-ring: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--aurora-teal);
+
+  /* Typography: Clash Display (display) + Satoshi (workhorse) */
+  --font-display: 'Clash Display', 'Avenir Next', 'Trebuchet MS', sans-serif;
+  --font-body: 'Satoshi', 'Avenir', 'Segoe UI', sans-serif;
+  --fs-display: clamp(2.2rem, 1.4rem + 3.2vw, 3.8rem); /* questions, hero titles */
+  --fs-title: clamp(1.7rem, 1.3rem + 1.4vw, 2.4rem);
+  --fs-subtitle: 1.2rem;
+  --fs-body: 1.02rem; /* transcripts */
+  --fs-small: 0.9rem;
+  --fs-label: 0.72rem; /* >4x smaller than display — hold this contrast */
+  --fs-giant: clamp(4.5rem, 3rem + 7vw, 8rem); /* ghost numerals */
 
   /* Spacing & radius */
   --space-1: 0.25rem;
@@ -50,25 +75,20 @@
   --space-5: 1.5rem;
   --space-6: 2rem;
   --space-7: 3rem;
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 22px;
+  --space-8: 4.5rem;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
   --radius-pill: 999px;
 
-  /* Glass surfaces */
-  --glass-bg: rgba(255, 255, 255, 0.6);
-  --glass-border: rgba(255, 255, 255, 0.75);
-
-  /* Focus ring */
-  --focus-ring: 0 0 0 3px rgba(59, 52, 134, 0.35);
-
-  /* Motion language: fade + small rise, always eased */
-  --motion-rise: 10px;
-  --dur-fast: 200ms;
-  --dur-base: 260ms;
-  --dur-state: 350ms; /* avatar state transitions */
-  --ease-out: cubic-bezier(0.22, 0.8, 0.36, 1);
-  --ease-in-out: cubic-bezier(0.55, 0.06, 0.25, 0.95);
-  /* Spring feel: slight overshoot for press-release and entrances */
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Motion: fluid and continuous — light doesn't bounce */
+  --motion-rise: 12px;
+  --dur-fast: 220ms;
+  --dur-base: 320ms;
+  --dur-state: 480ms; /* avatar state transitions */
+  --ease-out: cubic-bezier(0.22, 0.7, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.6, 0.05, 0.25, 0.95);
+  --ease-fluid: cubic-bezier(0.4, 0, 0.16, 1);
+  /* kept name for existing rules; aurora has no overshoot */
+  --ease-spring: var(--ease-fluid);
 }

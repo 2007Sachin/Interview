@@ -15,11 +15,13 @@ import { MicCheckScreen } from './screens/MicCheckScreen';
 import { MeetScreen } from './screens/MeetScreen';
 import { InterviewRoom } from './screens/InterviewRoom';
 import { WrapUpScreen } from './screens/WrapUpScreen';
+import { LostScreen } from './screens/LostScreen';
 import { Ambient } from './components/Ambient';
 import './screens/screens.css';
 
 type Screen =
   | 'restoring'
+  | 'lost'
   | 'start'
   | 'briefing'
   | 'miccheck'
@@ -73,7 +75,7 @@ export default function App() {
       } catch {
         if (!cancelled) {
           sessionStorage.removeItem(STORED_ID);
-          setScreen('start');
+          setScreen('lost');
         }
       }
     })();
@@ -113,11 +115,14 @@ export default function App() {
   function renderScreen() {
     switch (screen) {
       case 'restoring':
-      return (
-        <main className="screen screen-center enter">
-          <p className="screen-sub">Picking up where you left off…</p>
-        </main>
-      );
+        return (
+          <main className="screen screen-center enter">
+            <span className="beam" aria-hidden="true" style={{ margin: '0 auto var(--space-4)' }} />
+            <p className="screen-sub">Picking up where you left off…</p>
+          </main>
+        );
+      case 'lost':
+        return <LostScreen onHome={() => setScreen('start')} />;
     case 'start':
       return (
         <StartScreen

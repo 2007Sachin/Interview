@@ -118,13 +118,14 @@ export function WrapUpScreen({ session, closingLine, onReportReady }: Props) {
         />
       </div>
       <h1 style={{ marginTop: 'var(--space-5)' }}>Nicely done.</h1>
+      <span className="beam" aria-hidden="true" style={{ margin: '0 auto var(--space-4)' }} />
       <p className="screen-sub">
         {failed
           ? 'The report hit a snag on our side — your answers are safe. Give it another go.'
           : 'Your coaching report is on its way — it usually takes just a few seconds.'}
       </p>
       {!failed && !leaving && (
-        <div className="wrapup-skeleton card" aria-hidden="true">
+        <div className="wrapup-skeleton card beam-top" aria-hidden="true">
           <div className="skeleton" style={{ width: '40%' }} />
           <div className="skeleton" style={{ width: '90%' }} />
           <div className="skeleton" style={{ width: '75%' }} />

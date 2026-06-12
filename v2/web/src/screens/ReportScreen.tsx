@@ -40,7 +40,7 @@ export function ReportScreen({ report, interviewerName, onRestart }: Props) {
       <p className="screen-kicker">Your coaching report{report.partial ? ' · partial round' : ''}</p>
 
       {/* 1 · Readiness first, score second — both animate in */}
-      <section className="report-hero card">
+      <section className="report-hero">
         {celebrate && (
           <span className="spark-field" aria-hidden="true">
             {Array.from({ length: 9 }, (_, i) => (
@@ -48,25 +48,30 @@ export function ReportScreen({ report, interviewerName, onRestart }: Props) {
             ))}
           </span>
         )}
-        <div
-          className="readiness-badge badge-pop"
-          style={{ background: meta.bgVar, color: meta.colorVar }}
-        >
-          {meta.label}
+        <div className="hero-main">
+          <p className="label">Readiness</p>
+          <h1 className="readiness-word badge-pop" style={{ color: meta.colorVar }}>
+            {meta.label}
+          </h1>
+          <span className="beam" aria-hidden="true" />
+          <p className="readiness-tone">{meta.tone}</p>
+          <p className="report-summary">{report.overall.summary}</p>
+          {report.partial && (
+            <p className="report-partial">
+              You ended early — totally fine. This report covers what you answered.
+            </p>
+          )}
         </div>
-        <p className="readiness-tone">{meta.tone}</p>
-        <p className="report-summary">{report.overall.summary}</p>
-        <p className="report-score label">Overall score · {score} / 100</p>
-        {report.partial && (
-          <p className="report-partial">
-            You ended early — totally fine. This report covers what you answered.
-          </p>
-        )}
+        <div className="hero-score" aria-label={`Overall score ${score} out of 100`}>
+          <span className="hero-score-num">{score}</span>
+          <span className="label">/ 100 overall</span>
+        </div>
       </section>
 
       {/* 2 · What you did well — staggered in one by one */}
       <section>
         <h2 className="screen-title">What you did well</h2>
+        <span className="beam" aria-hidden="true" />
         <div className="highlight-list">
           {report.highlights.map((h, i) => (
             <div
@@ -84,7 +89,8 @@ export function ReportScreen({ report, interviewerName, onRestart }: Props) {
       {/* 3 · One thing to fix — delayed scale entrance so it lands as the key moment */}
       <section>
         <h2 className="screen-title">Your one thing to fix</h2>
-        <div className="card fix-card fix-entrance">
+        <span className="beam" aria-hidden="true" />
+        <div className="card fix-card fix-entrance beam-top">
           <h3>{report.oneThingToFix.title}</h3>
           <p className="label">Why it matters</p>
           <p>{report.oneThingToFix.why}</p>
@@ -96,6 +102,7 @@ export function ReportScreen({ report, interviewerName, onRestart }: Props) {
       {/* 4 · SWOT 2x2 — tiles rise in sequence */}
       <section>
         <h2 className="screen-title">Your SWOT</h2>
+        <span className="beam" aria-hidden="true" />
         <div className="swot-grid">
           {SWOT_QUADRANTS.map((q, i) => (
             <div
@@ -122,6 +129,7 @@ export function ReportScreen({ report, interviewerName, onRestart }: Props) {
       {/* 5 · Per-question breakdown */}
       <section>
         <h2 className="screen-title">Question by question</h2>
+        <span className="beam" aria-hidden="true" />
         <div className="pq-list">
           {report.perQuestion.map((q, i) => (
             <div
@@ -158,6 +166,7 @@ export function ReportScreen({ report, interviewerName, onRestart }: Props) {
       {/* 6 · Closing call-to-action */}
       <section className="card report-cta">
         <h2 className="screen-title">Fix that one thing, then interview again</h2>
+        <span className="beam" aria-hidden="true" />
         <p className="screen-sub">
           One focused rep beats ten unfocused ones. Your setup is saved — same topic, fresh
           questions.

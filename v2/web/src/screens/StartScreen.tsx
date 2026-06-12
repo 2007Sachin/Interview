@@ -40,6 +40,7 @@ export function StartScreen({ busy, error, initial, onSubmit }: Props) {
     <main className="screen enter">
       <p className="screen-kicker">Interview practice</p>
       <h1>What are you practicing for?</h1>
+      <span className="beam" aria-hidden="true" />
       <p className="screen-sub">
         Pick one — we'll build a short practice interview around it. About 7 minutes, and you
         control the pace the whole way.
@@ -59,7 +60,7 @@ export function StartScreen({ busy, error, initial, onSubmit }: Props) {
         ))}
       </div>
 
-      <div className="card" style={{ display: 'grid', gap: 'var(--space-4)' }}>
+      <div className="card beam-top start-panel" style={{ display: 'grid', gap: 'var(--space-4)' }}>
         {mode === 'skill' && (
           <>
             <label className="field">

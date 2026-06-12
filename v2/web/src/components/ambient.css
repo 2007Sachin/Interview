@@ -1,61 +1,64 @@
+/* The aurora field: a continuous plasma sky behind every screen. */
 .ambient {
   position: fixed;
   inset: 0;
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
+  background: var(--bg-base);
 }
 
 .amb-blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(70px);
+  filter: blur(80px);
   will-change: transform;
 }
 
-/* Base atmosphere: two soft blobs drifting on 25-30s loops */
+/* Base atmosphere: teal and violet plasma drifting on 28-40s loops */
 .amb-base-a {
-  width: 55vmax;
-  height: 55vmax;
-  left: -18vmax;
-  top: -20vmax;
-  background: radial-gradient(circle, rgba(59, 52, 134, 0.1), transparent 65%);
-  animation: amb-drift-a 28s var(--ease-in-out) infinite;
+  width: 60vmax;
+  height: 60vmax;
+  left: -20vmax;
+  top: -24vmax;
+  background: radial-gradient(circle, rgba(139, 123, 247, 0.2), transparent 62%);
+  animation: amb-drift-a 34s var(--ease-in-out) infinite;
 }
 
 .amb-base-b {
-  width: 48vmax;
-  height: 48vmax;
-  right: -16vmax;
-  bottom: -18vmax;
-  background: radial-gradient(circle, rgba(232, 163, 61, 0.09), transparent 65%);
-  animation: amb-drift-b 24s var(--ease-in-out) infinite;
+  width: 52vmax;
+  height: 52vmax;
+  right: -18vmax;
+  bottom: -20vmax;
+  background: radial-gradient(circle, rgba(94, 230, 200, 0.13), transparent 62%);
+  animation: amb-drift-b 28s var(--ease-in-out) infinite;
 }
 
-/* Mood overlays: cross-faded by opacity only (gradients can't transition) */
+/* Mood overlays: cross-faded by opacity only (gradients can't transition).
+   Student speaking = teal life; Asha speaking = violet presence. */
 .amb-mood {
   opacity: 0;
-  transition: opacity 1.6s var(--ease-in-out);
+  transition: opacity 1.8s var(--ease-in-out);
 }
 
 .amb-warm {
-  width: 70vmax;
-  height: 70vmax;
+  width: 75vmax;
+  height: 75vmax;
   left: 50%;
-  top: 45%;
-  margin: -35vmax 0 0 -35vmax;
-  background: radial-gradient(circle, rgba(232, 163, 61, 0.13), transparent 60%);
-  animation: amb-drift-b 30s var(--ease-in-out) infinite;
+  top: 48%;
+  margin: -37.5vmax 0 0 -37.5vmax;
+  background: radial-gradient(circle, rgba(94, 230, 200, 0.16), transparent 58%);
+  animation: amb-drift-b 38s var(--ease-in-out) infinite;
 }
 
 .amb-indigo {
-  width: 70vmax;
-  height: 70vmax;
+  width: 75vmax;
+  height: 75vmax;
   left: 50%;
-  top: 40%;
-  margin: -35vmax 0 0 -35vmax;
-  background: radial-gradient(circle, rgba(59, 52, 134, 0.14), transparent 60%);
-  animation: amb-drift-a 26s var(--ease-in-out) infinite;
+  top: 42%;
+  margin: -37.5vmax 0 0 -37.5vmax;
+  background: radial-gradient(circle, rgba(139, 123, 247, 0.22), transparent 58%);
+  animation: amb-drift-a 32s var(--ease-in-out) infinite;
 }
 
 :root[data-mood='student'] .amb-warm {
@@ -72,7 +75,7 @@
     transform: translate(0, 0) scale(1);
   }
   50% {
-    transform: translate(6vmax, 4vmax) scale(1.12);
+    transform: translate(7vmax, 5vmax) scale(1.15);
   }
 }
 
@@ -82,18 +85,18 @@
     transform: translate(0, 0) scale(1);
   }
   50% {
-    transform: translate(-5vmax, -4vmax) scale(0.92);
+    transform: translate(-6vmax, -5vmax) scale(0.9);
   }
 }
 
-/* Faint vignette/spotlight keeping focus on the orb + question */
+/* Night-sky vignette: darkness pools at the edges, light holds the center */
 .amb-vignette {
   position: absolute;
   inset: 0;
   background: radial-gradient(
-    ellipse 70% 60% at 50% 38%,
-    transparent 55%,
-    rgba(28, 27, 51, 0.06) 100%
+    ellipse 75% 65% at 50% 38%,
+    transparent 50%,
+    rgba(3, 4, 10, 0.55) 100%
   );
 }
 

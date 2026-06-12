@@ -1,37 +1,85 @@
+/* AURORA report: luminous readiness word, Beam section rules, dark cards. */
 .report {
-  gap: var(--space-6);
+  gap: var(--space-7);
 }
 
 .report section {
   display: block;
+  width: 100%;
 }
 
+/* ── Hero: asymmetric — readiness word left, giant score right ──────────── */
 .report-hero {
   position: relative;
-  overflow: hidden;
-  text-align: center;
-  padding: var(--space-6);
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) auto;
+  gap: var(--space-6);
+  align-items: start;
+  width: 100%;
 }
 
-/* Readiness badge pops in with a spring */
+@media (max-width: 700px) {
+  .report-hero {
+    grid-template-columns: 1fr;
+  }
+}
+
+.readiness-word {
+  font-size: var(--fs-display);
+  margin: var(--space-2) 0 0;
+  text-transform: capitalize;
+}
+
 .badge-pop {
-  animation: badge-pop 600ms var(--ease-spring) 150ms both;
+  animation: badge-pop 700ms var(--ease-fluid) 150ms both;
 }
 
 @keyframes badge-pop {
   from {
     opacity: 0;
-    transform: scale(0.7);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0);
   }
+}
+
+.readiness-tone {
+  font-size: var(--fs-subtitle);
+  margin: 0 0 var(--space-3);
+}
+
+.report-summary {
+  color: var(--text-secondary);
+  max-width: 58ch;
+  margin: 0;
+}
+
+.report-partial {
+  margin: var(--space-3) 0 0;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+
+.hero-score {
+  display: grid;
+  justify-items: end;
+  text-align: right;
+}
+
+.hero-score-num {
+  font-family: var(--font-display);
+  font-size: var(--fs-giant);
+  font-weight: 600;
+  line-height: 0.9;
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(169, 167, 201, 0.55);
 }
 
 /* Staggered card entrances (delay set inline per card) */
 .stagger-in {
-  animation: stagger-in 480ms var(--ease-out) both;
+  animation: stagger-in 520ms var(--ease-fluid) both;
 }
 
 @keyframes stagger-in {
@@ -45,113 +93,6 @@
   }
 }
 
-/* The key moment: one-thing-to-fix lands late with a gentle scale */
-.fix-entrance {
-  animation: fix-in 560ms var(--ease-spring) 250ms both;
-}
-
-@keyframes fix-in {
-  from {
-    opacity: 0;
-    transform: scale(0.96) translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-/* One tasteful celebratory touch: brief soft shimmer behind the score */
-.spark-field {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.spark {
-  position: absolute;
-  bottom: 18%;
-  left: 50%;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-  opacity: 0;
-  animation: spark-rise 1.7s var(--ease-out) both;
-}
-
-.spark:nth-child(odd) {
-  background: var(--primary-soft);
-}
-
-.spark-1 { margin-left: -120px; animation-delay: 0.45s; }
-.spark-2 { margin-left: -80px;  animation-delay: 0.7s; }
-.spark-3 { margin-left: -40px;  animation-delay: 0.55s; }
-.spark-4 { margin-left: -8px;   animation-delay: 0.85s; }
-.spark-5 { margin-left: 26px;   animation-delay: 0.5s; }
-.spark-6 { margin-left: 64px;   animation-delay: 0.75s; }
-.spark-7 { margin-left: 102px;  animation-delay: 0.6s; }
-.spark-8 { margin-left: 138px;  animation-delay: 0.9s; }
-.spark-9 { margin-left: -150px; animation-delay: 0.8s; }
-
-@keyframes spark-rise {
-  0% {
-    opacity: 0;
-    transform: translateY(0) scale(0.6);
-  }
-  25% {
-    opacity: 0.85;
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-90px) scale(1.1);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .spark-field {
-    display: none;
-  }
-
-  .stagger-in,
-  .badge-pop,
-  .fix-entrance {
-    animation: none;
-    opacity: 1;
-    transform: none;
-  }
-}
-
-.readiness-badge {
-  display: inline-block;
-  border-radius: var(--radius-pill);
-  padding: var(--space-2) var(--space-5);
-  font-weight: 700;
-  font-size: var(--fs-subtitle);
-  letter-spacing: 0.02em;
-}
-
-.readiness-tone {
-  font-size: var(--fs-subtitle);
-  margin: var(--space-4) 0 var(--space-2);
-}
-
-.report-summary {
-  color: var(--text-secondary);
-  max-width: 60ch;
-  margin: 0 auto var(--space-4);
-}
-
-.report-score {
-  margin: 0;
-}
-
-.report-partial {
-  margin: var(--space-3) 0 0;
-  font-size: var(--fs-small);
-  color: var(--text-muted);
-}
-
 /* Highlights */
 .highlight-list {
   display: grid;
@@ -162,11 +103,12 @@
   display: flex;
   gap: var(--space-3);
   align-items: flex-start;
-  padding: var(--space-4);
+  padding: var(--space-4) var(--space-5);
 }
 
 .highlight-card p {
   margin: 0;
+  color: var(--text-secondary);
 }
 
 .highlight-mark {
@@ -177,17 +119,32 @@
   display: grid;
   place-items: center;
   background: var(--success-soft);
-  color: var(--success);
+  color: var(--aurora-teal);
   font-weight: 700;
 }
 
-/* One thing to fix */
+/* The key moment: one-thing-to-fix lands late, lit by the Beam */
 .fix-card {
-  border-left: 4px solid var(--accent);
+  border-left: none;
+}
+
+.fix-entrance {
+  animation: fix-in 600ms var(--ease-fluid) 250ms both;
+}
+
+@keyframes fix-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .fix-card h3 {
-  font-size: var(--fs-subtitle);
+  font-size: var(--fs-title);
 }
 
 .fix-card p {
@@ -251,8 +208,8 @@
   flex: none;
   font-size: var(--fs-small);
   font-weight: 700;
-  color: var(--primary);
-  background: var(--primary-soft);
+  color: var(--aurora-teal);
+  background: var(--accent-soft);
   border-radius: var(--radius-pill);
   padding: var(--space-1) var(--space-3);
 }
@@ -275,6 +232,16 @@
   border-color: transparent;
 }
 
+.report-cta .beam {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.report-cta .screen-sub {
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .report-cta-actions {
   display: flex;
   gap: var(--space-3);
@@ -282,22 +249,122 @@
   margin-top: var(--space-4);
 }
 
-/* ── Print: save-as-PDF via the browser, no paid services ──────────────── */
+/* One tasteful celebratory touch: sparks rising behind the hero */
+.spark-field {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.spark {
+  position: absolute;
+  bottom: 12%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--aurora-magenta);
+  opacity: 0;
+  animation: spark-rise 1.8s var(--ease-out) both;
+}
+
+.spark:nth-child(odd) {
+  background: var(--aurora-teal);
+}
+
+.spark-1 { margin-left: -120px; animation-delay: 0.45s; }
+.spark-2 { margin-left: -80px;  animation-delay: 0.7s; }
+.spark-3 { margin-left: -40px;  animation-delay: 0.55s; }
+.spark-4 { margin-left: -8px;   animation-delay: 0.85s; }
+.spark-5 { margin-left: 26px;   animation-delay: 0.5s; }
+.spark-6 { margin-left: 64px;   animation-delay: 0.75s; }
+.spark-7 { margin-left: 102px;  animation-delay: 0.6s; }
+.spark-8 { margin-left: 138px;  animation-delay: 0.9s; }
+.spark-9 { margin-left: -150px; animation-delay: 0.8s; }
+
+@keyframes spark-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.6);
+  }
+  25% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-90px) scale(1.1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spark-field {
+    display: none;
+  }
+
+  .stagger-in,
+  .badge-pop,
+  .fix-entrance {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── Print: the direction translated to paper — ink on white, Beam rules
+   in color, no chrome. Save-as-PDF via the browser, no paid services. ──── */
 @media print {
+  :root {
+    --text-primary: #14132b;
+    --text-secondary: #44436b;
+    --text-muted: #6e6d94;
+  }
+
   body {
     background: #fff;
+    color: var(--text-primary);
   }
 
   .report {
     max-width: none;
     padding: 0;
-    gap: var(--space-4);
+    gap: var(--space-5);
   }
 
   .card {
+    background: #fff;
     box-shadow: none;
-    border-color: var(--border);
+    border: 1px solid #d9d8ea;
     break-inside: avoid;
+  }
+
+  .beam,
+  .beam-top::before {
+    box-shadow: none;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .hero-score-num {
+    color: #14132b;
+    -webkit-text-stroke: 0;
+  }
+
+  .readiness-word {
+    color: #14132b !important;
+  }
+
+  .highlight-card p,
+  .fix-card p,
+  .swot-cell ul,
+  .pq-row,
+  .report-summary {
+    color: #44436b;
+  }
+
+  .pq-score {
+    background: none;
+    border: 1px solid #d9d8ea;
+    color: #14132b;
   }
 
   .report-cta,
@@ -312,7 +379,12 @@
   }
 
   .enter,
-  .enter-slow {
+  .enter-slow,
+  .stagger-in,
+  .badge-pop,
+  .fix-entrance {
     animation: none;
+    opacity: 1;
+    transform: none;
   }
 }

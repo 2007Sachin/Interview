@@ -209,22 +209,9 @@ export function InterviewRoom({ session, micWorks, resumed, onFinished }: Props)
     <main className={`room enter ${cinematic ? 'room-cinematic' : ''}`}>
       {cinematic && <div className="start-dim" aria-hidden="true" />}
 
-      <div className={`room-orb ${cinematic ? 'orb-arrive' : ''}`} key={`inhale-${questionIndex}-${isFollowUp}`}>
-        <InterviewerAvatar
-          state={phaseToAvatar[phase]}
-          name={name}
-          statusLabel={statusLabel}
-          getLevel={avatarLevel}
-        />
-      </div>
-
-      <div style={{ textAlign: 'center' }}>
-        <p className="screen-kicker">
-          {isFollowUp
-            ? `Follow-up · Question ${questionIndex + 1} of ${total}`
-            : `Question ${questionIndex + 1} of ${total}`}
-        </p>
-        <div className="progress-track" aria-hidden="true">
+      {/* The Beam crosses the top of the stage as progress */}
+      <div className="room-progress" aria-hidden="true">
+        <div className="progress-track">
           <div
             className="progress-fill"
             style={{ transform: `scaleX(${(questionIndex + 1) / total})` }}
@@ -233,16 +220,47 @@ export function InterviewRoom({ session, micWorks, resumed, onFinished }: Props)
         </div>
       </div>
 
-      <QuestionText key={prompt} text={prompt} speechSeconds={speechSeconds} />
+      <div className="room-head">
+        <span className="room-qnum" aria-hidden="true">
+          {String(questionIndex + 1).padStart(2, '0')}
+        </span>
+        <div>
+          <p className="screen-kicker" style={{ margin: 0 }}>
+            {isFollowUp
+              ? `Follow-up · Question ${questionIndex + 1} of ${total}`
+              : `Question ${questionIndex + 1} of ${total}`}
+          </p>
+          <span className="beam" style={{ marginBottom: 0 }} />
+        </div>
+      </div>
+
+      <div className="room-stage">
+        <QuestionText key={prompt} text={prompt} speechSeconds={speechSeconds} />
+        <div
+          className={`room-orb ${cinematic ? 'orb-arrive' : ''}`}
+          key={`inhale-${questionIndex}-${isFollowUp}`}
+        >
+          <InterviewerAvatar
+            state={phaseToAvatar[phase]}
+            name={name}
+            statusLabel={statusLabel}
+            getLevel={avatarLevel}
+          />
+        </div>
+      </div>
 
       <div className="transcript-live">
-        {transcript && (
-          <div className="card transcript-card enter" key={transcript}>
+        {transcript ? (
+          <div className="card transcript-card beam-top" key={transcript}>
             <p className="label">What {name} heard</p>
             <p style={{ margin: 'var(--space-1) 0 0', color: 'var(--text-secondary)' }}>
               {transcript}
             </p>
           </div>
+        ) : (
+          <p className="transcript-empty">
+            Your words land here as {name} hears them — answer when you're ready.
+          </p>
         )}
         {notice && (
           <p className="error-note enter" style={{ marginTop: 'var(--space-3)' }}>

@@ -67,13 +67,17 @@ export function MicCheckScreen({ interviewerName, onContinue }: Props) {
     <main className="screen enter">
       <p className="screen-kicker">Joining your interview</p>
       <h1>Quick sound check</h1>
+      <span className="beam" aria-hidden="true" />
       <p className="screen-sub">
         Two quick checks so {interviewerName} can hear you and you can hear {interviewerName}.
       </p>
 
-      <div className="card" style={{ display: 'grid', gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
+      <div className="check-step">
+        <span className="check-num" aria-hidden="true">
+          01
+        </span>
         <div>
-          <p className="label">1 · Microphone</p>
+          <p className="label">Microphone</p>
           {micStatus !== 'ok' && (
             <button
               className="btn btn-secondary"
@@ -101,9 +105,14 @@ export function MicCheckScreen({ interviewerName, onContinue }: Props) {
             </p>
           )}
         </div>
+      </div>
 
+      <div className="check-step">
+        <span className="check-num" aria-hidden="true">
+          02
+        </span>
         <div>
-          <p className="label">2 · Speakers</p>
+          <p className="label">Speakers</p>
           <button
             className="btn btn-secondary"
             style={{ marginTop: 'var(--space-2)' }}
@@ -119,7 +128,7 @@ export function MicCheckScreen({ interviewerName, onContinue }: Props) {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+      <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-5)' }}>
         <button
           className="btn btn-primary"
           onClick={() => {

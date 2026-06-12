@@ -40,6 +40,7 @@ export function MeetScreen({ session, onStart }: Props) {
         getLevel={avatarState === 'speaking' ? getTtsLevel : undefined}
       />
       <h1 style={{ marginTop: 'var(--space-5)' }}>Meet {name}</h1>
+      <span className="beam" aria-hidden="true" style={{ margin: '0 auto var(--space-4)' }} />
       <p className="screen-sub">
         "Hi, I'm {name} — I'll be interviewing you on {session.brief.title}. Ready when you are."
       </p>
