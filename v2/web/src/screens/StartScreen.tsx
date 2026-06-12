@@ -21,9 +21,11 @@ interface Props {
   onSubmit: (input: CreateSessionInput) => void;
   /** Present when the student has saved progress — link back to My Interviews. */
   onHome?: () => void;
+  /** Whether the student has saved progress — controls the privacy disclosure. */
+  signedIn?: boolean;
 }
 
-export function StartScreen({ busy, error, initial, onSubmit, onHome }: Props) {
+export function StartScreen({ busy, error, initial, onSubmit, onHome, signedIn }: Props) {
   const [mode, setMode] = useState<InterviewMode>(initial?.mode ?? 'skill');
   const [skill, setSkill] = useState(initial?.skill ?? '');
   const [level, setLevel] = useState(initial?.level ?? 'beginner');
@@ -169,6 +171,19 @@ export function StartScreen({ busy, error, initial, onSubmit, onHome }: Props) {
         )}
         {error && <p className="error-note">{error}</p>}
       </div>
+
+      <p
+        style={{
+          marginTop: 'var(--space-4)',
+          fontSize: 'var(--fs-small)',
+          color: 'var(--text-muted)',
+          maxWidth: '52ch',
+        }}
+      >
+        {signedIn
+          ? 'Heads-up: your college placement team can see your practice progress (topics, scores, readiness) — never raw recordings. You can delete any interview, or all of it, anytime.'
+          : 'Heads-up: if you save your progress after this round, your college placement team can see your practice progress (topics, scores, readiness) — never raw recordings. You can delete any interview, or all of it, anytime.'}
+      </p>
     </main>
   );
 }

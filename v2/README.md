@@ -217,6 +217,12 @@ alter table public.sessions enable row level security;
 alter table public.users enable row level security;
 ```
 
+Then apply the RLS policies in [`server/supabase/policies.sql`](server/supabase/policies.sql)
+— same SQL editor, one paste. They lock anon access, let a signed-in student read/delete
+only their own rows, and let admins read rows within their own institution. The Node
+server uses the service-role key and bypasses RLS, so the policies only constrain direct
+client-SDK access.
+
 One row per interview. The whole session — brief, per-question transcripts, the coaching
 report and the cost log — lives in `data` (jsonb); key fields are promoted to columns for
 cheap queries. Deleting a user cascades to their sessions (the server also deletes
@@ -241,8 +247,9 @@ refused rather than leaking someone's history. Production upgrade path: swap the
    note judging whether your previous "one thing to fix" improved.
 4. Go to **My interviews** → **Progress** on the sql row: score trend sparkline, readiness
    journey, the "What changed" comparison, and per-attempt report links.
-5. Back home, hit **Weak spot drill**: a 3-question mini-interview generated only from your
-   accumulated weaknesses — finish it and it lands in history like any round.
+5. From home or any topic's Progress view, hit **Weak spot drill**: a 3-question
+   mini-interview generated only from your accumulated weaknesses — finish it and it
+   lands in history like any round.
 6. Difficulty: start a new interview and pick easy/standard/hard — hard probes much more
    aggressively with follow-ups; the level is recorded in history.
 7. Privacy: delete a single interview (✕ on its row) or **Delete my data** for the full

@@ -7,11 +7,14 @@ interface Props {
   onBack: () => void;
   onOpenReport: (id: string) => void;
   onReInterview: (topicLabel: string) => void;
+  onDrill?: () => void;
+  drillBusy?: boolean;
+  drillError?: string;
 }
 
 const DATE_FMT = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
 
-export function ProgressScreen({ topicKey, onBack, onOpenReport, onReInterview }: Props) {
+export function ProgressScreen({ topicKey, onBack, onOpenReport, onReInterview, onDrill, drillBusy, drillError }: Props) {
   const [progress, setProgress] = useState<TopicProgress | null>(null);
   const [error, setError] = useState('');
 
@@ -86,13 +89,25 @@ export function ProgressScreen({ topicKey, onBack, onOpenReport, onReInterview }
               )}
             </div>
 
-            <button
-              className="btn btn-primary"
-              style={{ marginTop: 'var(--space-5)' }}
-              onClick={() => onReInterview(progress.topicLabel)}
-            >
-              Re-interview on {progress.topicLabel}
-            </button>
+            <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', marginTop: 'var(--space-5)' }}>
+              <button
+                className="btn btn-primary"
+                onClick={() => onReInterview(progress.topicLabel)}
+              >
+                Re-interview on {progress.topicLabel}
+              </button>
+              {onDrill && (
+                <button
+                  className="btn btn-secondary"
+                  onClick={onDrill}
+                  disabled={drillBusy}
+                  data-tip="A 3-question round built from your weak spots across topics"
+                >
+                  {drillBusy ? 'Building your drill…' : 'Weak spot drill'}
+                </button>
+              )}
+            </div>
+            {drillError && <p className="error-note" style={{ marginTop: 'var(--space-3)' }}>{drillError}</p>}
           </div>
 
           <aside className="brief-rail" aria-label="Attempts">
