@@ -63,12 +63,27 @@ export class SupabaseSessionStore implements SessionStore {
     return (count ?? 0) > 0;
   }
 
+  private toStudent(data: Record<string, unknown>): Student {
+    return {
+      id: String(data.id),
+      handle: String(data.handle),
+      name: String(data.name ?? ''),
+      createdAt: String(data.created_at),
+      institution: String(data.institution ?? ''),
+      batch: String(data.batch ?? ''),
+      isAdmin: Boolean(data.is_admin),
+    };
+  }
+
   async createStudent(student: Student): Promise<void> {
     const { error } = await this.client.from('users').insert({
       id: student.id,
       handle: student.handle,
       name: student.name,
       created_at: student.createdAt,
+      institution: student.institution,
+      batch: student.batch,
+      is_admin: student.isAdmin,
     });
     if (error) throw new Error(`supabase user insert failed: ${error.message}`);
   }
@@ -76,9 +91,7 @@ export class SupabaseSessionStore implements SessionStore {
   async getStudent(id: string): Promise<Student | null> {
     const { data, error } = await this.client.from('users').select('*').eq('id', id).maybeSingle();
     if (error) throw new Error(`supabase user select failed: ${error.message}`);
-    return data
-      ? { id: data.id, handle: data.handle, name: data.name ?? '', createdAt: data.created_at }
-      : null;
+    return data ? this.toStudent(data) : null;
   }
 
   async getStudentByHandle(handle: string): Promise<Student | null> {
@@ -88,9 +101,23 @@ export class SupabaseSessionStore implements SessionStore {
       .ilike('handle', handle)
       .maybeSingle();
     if (error) throw new Error(`supabase user select failed: ${error.message}`);
-    return data
-      ? { id: data.id, handle: data.handle, name: data.name ?? '', createdAt: data.created_at }
-      : null;
+    return data ? this.toStudent(data) : null;
+  }
+
+  async listStudents(): Promise<Student[]> {
+    const { data, error } = await this.client.from('users').select('*').limit(2000);
+    if (error) throw new Error(`supabase users list failed: ${error.message}`);
+    return (data ?? []).map((d) => this.toStudent(d));
+  }
+
+  async listAllSessions(): Promise<Session[]> {
+    const { data, error } = await this.client
+      .from('sessions')
+      .select('data')
+      .order('created_at', { ascending: false })
+      .limit(2000);
+    if (error) throw new Error(`supabase sessions list failed: ${error.message}`);
+    return (data ?? []).map((r) => r.data as Session);
   }
 
   async listByStudent(studentId: string): Promise<SessionSummary[]> {

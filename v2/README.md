@@ -177,7 +177,10 @@ create table public.users (
   id uuid primary key,
   handle text not null unique,      -- email or college ID, the student's choice
   name text not null default '',
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  institution text not null default '',  -- derived from the handle's domain at signup
+  batch text not null default '',        -- batch/department, set manually for v1
+  is_admin boolean not null default false
 );
 
 create table public.sessions (
@@ -244,6 +247,68 @@ refused rather than leaking someone's history. Production upgrade path: swap the
    aggressively with follow-ups; the level is recorded in history.
 7. Privacy: delete a single interview (✕ on its row) or **Delete my data** for the full
    cascade.
+
+## Institution admin dashboard (`/admin`)
+
+A read-only view for the placement office: *are my students practicing, and are they
+getting interview-ready?* Open **http://localhost:5173/admin** (or `<frontend-url>/admin`
+in production).
+
+**Access** — either of:
+
+1. `ADMIN_KEY` from the server env, typed into the `/admin` unlock screen; or
+2. an admin-flagged user (requests carrying their `X-Student-Id`). Set the flag manually
+   for v1:
+   - Supabase: `update users set is_admin = true where handle = 'placement@college.edu';`
+   - File backend: edit `server/data/students/<id>.json` and set `"isAdmin": true`.
+
+**Institution & batch mapping (v1)** — `institution` is derived from the signup handle's
+email domain; `batch` starts empty and is set by manual mapping:
+`update users set batch = 'CSE-2026' where handle like '%@cse.college.edu';`
+(file backend: edit the student JSON).
+
+**Dashboard sections** (`GET /api/admin/overview`): stat cards (active students this week,
+interviews this week vs last, average score vs last week, readiness mix as a stacked bar),
+interviews/day for 30 days, readiness funnel with movement vs ~30 days ago, hot topics with
+average scores, and anonymized common-weakness patterns ("42% of students struggle with
+concise answers") bucketed by keyword from `oneThingToFix` + SWOT weaknesses. The roster
+(`GET /api/admin/roster?q=&batch=`) is searchable, batch-filterable, exports CSV
+client-side, and clicks through to a student's history (`GET /api/admin/student/:id`).
+Aggregates are computed in Node from the store, so they work identically on the file and
+Supabase backends; the equivalent Supabase SQL for ad-hoc analysis:
+
+```sql
+-- interviews per day, last 30 days
+select created_at::date as day, count(*) from sessions
+where created_at > now() - interval '30 days' group by 1 order by 1;
+
+-- readiness funnel (latest readiness per student)
+select readiness, count(*) from (
+  select distinct on (student_id) student_id, readiness
+  from sessions where student_id is not null and readiness is not null
+  order by student_id, created_at desc
+) latest group by readiness;
+
+-- hot topics
+select topic_key, count(*) as attempts, round(avg(score), 1) as avg_score
+from sessions where kind = 'interview' group by topic_key order by attempts desc;
+```
+
+**Tone guardrails**: the UI frames everything as progress and cohort patterns — there are
+no leaderboards and no student-vs-student ranking views, by design. Students are told at
+"save your progress" that their college can see practice progress.
+
+**Demo with seeded data**:
+
+```bash
+cd v2/server
+npm run seed          # ~30 fake students, ~95 interviews, varied histories
+npm run dev           # with ADMIN_KEY=devkey (or any value) in v2/.env
+```
+
+Then open http://localhost:5173/admin, enter your `ADMIN_KEY`, and every dashboard section
+is populated; the roster search/filter/CSV and student drill-down work against the seeded
+cohort. (Seeding respects `STORAGE_BACKEND`, so the same command fills Supabase.)
 
 ## Admin peek
 

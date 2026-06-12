@@ -18,6 +18,11 @@ export interface SessionStore {
   /** Delete the student and every session they own. */
   deleteStudent(studentId: string): Promise<void>;
 
+  /* ── Admin (read-only aggregates are computed in Node from these) ─────── */
+  listStudents(): Promise<Student[]>;
+  /** Every stored session (capped); enough for v1 dashboard aggregation. */
+  listAllSessions(): Promise<Session[]>;
+
   /** Lightweight stats for the admin peek: sessions per day and average cost. */
   stats(): Promise<{ day: string; interviews: number; avgCostUsd: number }[]>;
 }

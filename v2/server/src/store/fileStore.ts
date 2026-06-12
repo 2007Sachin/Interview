@@ -113,6 +113,26 @@ export class FileSessionStore implements SessionStore {
     return sessions;
   }
 
+  async listStudents(): Promise<Student[]> {
+    let files: string[];
+    try {
+      files = await fs.readdir(this.studentsDir);
+    } catch {
+      return [];
+    }
+    const students: Student[] = [];
+    for (const f of files) {
+      if (!f.endsWith('.json')) continue;
+      const s = await this.readJson<Student>(path.join(this.studentsDir, f));
+      if (s) students.push(s);
+    }
+    return students;
+  }
+
+  async listAllSessions(): Promise<Session[]> {
+    return this.allSessions();
+  }
+
   async deleteStudent(studentId: string): Promise<void> {
     const sessions = (await this.allSessions()).filter((s) => s.studentId === studentId);
     for (const s of sessions) {

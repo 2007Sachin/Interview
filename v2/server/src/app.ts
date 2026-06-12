@@ -265,6 +265,13 @@ export function createApp(store: SessionStore, groq: GroqClient): express.Expres
         handle,
         name,
         createdAt: new Date().toISOString(),
+        // v1 mapping: institution from the email/ID domain; batch is set
+        // manually by the placement office (see README).
+        institution: handle.includes('@')
+          ? (handle.split('@')[1] ?? '').toLowerCase()
+          : 'campus',
+        batch: '',
+        isAdmin: false,
       };
       await store.createStudent(student);
       res.json(student);
@@ -391,14 +398,99 @@ export function createApp(store: SessionStore, groq: GroqClient): express.Expres
     res.json({ ok: true });
   });
 
-  // Lightweight admin peek: interviews/day + average cost. Requires ADMIN_KEY.
-  app.get('/api/admin/stats', async (req, res) => {
-    if (!config.adminKey || req.query.key !== config.adminKey) {
-      res.status(401).json({ error: 'unauthorized' });
-      return;
+  /* ── Institution admin (read-only). Access: ADMIN_KEY or an isAdmin user. ─ */
+
+  async function isAdminReq(req: express.Request): Promise<boolean> {
+    if (
+      config.adminKey &&
+      (req.query.key === config.adminKey || req.header('x-admin-key') === config.adminKey)
+    ) {
+      return true;
     }
-    res.json({ days: await store.stats() });
-  });
+    const student = await studentFrom(req);
+    return student?.isAdmin === true;
+  }
+
+  function adminGuard(
+    handler: (req: express.Request, res: express.Response) => Promise<void>,
+  ): express.RequestHandler {
+    return async (req, res) => {
+      if (!(await isAdminReq(req))) {
+        res.status(401).json({ error: 'unauthorized' });
+        return;
+      }
+      try {
+        await handler(req, res);
+      } catch (err) {
+        console.error('[api] admin route failed:', err);
+        res.status(502).json({ error: 'could not load that just now — try again' });
+      }
+    };
+  }
+
+  app.get(
+    '/api/admin/overview',
+    adminGuard(async (_req, res) => {
+      const { buildOverview } = await import('./admin.js');
+      const [students, sessions] = await Promise.all([
+        store.listStudents(),
+        store.listAllSessions(),
+      ]);
+      res.json(buildOverview(students, sessions));
+    }),
+  );
+
+  app.get(
+    '/api/admin/roster',
+    adminGuard(async (req, res) => {
+      const { buildRoster } = await import('./admin.js');
+      const [students, sessions] = await Promise.all([
+        store.listStudents(),
+        store.listAllSessions(),
+      ]);
+      let roster = buildRoster(students, sessions);
+      const q = String(req.query.q ?? '').toLowerCase();
+      const batch = String(req.query.batch ?? '');
+      if (q) {
+        roster = roster.filter(
+          (r) => r.name.toLowerCase().includes(q) || r.handle.toLowerCase().includes(q),
+        );
+      }
+      if (batch) roster = roster.filter((r) => r.batch === batch);
+      res.json({ roster });
+    }),
+  );
+
+  app.get(
+    '/api/admin/student/:id',
+    adminGuard(async (req, res) => {
+      const student = await store.getStudent(String(req.params.id));
+      if (!student) {
+        res.status(404).json({ error: 'student not found' });
+        return;
+      }
+      const interviews = await store.listByStudent(student.id);
+      res.json({
+        student: {
+          id: student.id,
+          name: student.name,
+          handle: student.handle,
+          institution: student.institution,
+          batch: student.batch,
+          createdAt: student.createdAt,
+        },
+        interviews,
+      });
+    }),
+  );
+
+  // Lightweight cost peek (kept from stage 5).
+  app.get(
+    '/api/admin/stats',
+    adminGuard(async (_req, res) => {
+      res.json({ days: await store.stats() });
+    }),
+  );
 
   return app;
 }

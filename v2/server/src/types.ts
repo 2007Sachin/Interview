@@ -11,6 +11,12 @@ export interface Student {
   handle: string;
   name: string;
   createdAt: string;
+  /** Derived from the handle's domain at signup; manual mapping can override. */
+  institution: string;
+  /** Batch/department — set via manual mapping for v1. */
+  batch: string;
+  /** Placement-office access. Manually settable; see README. */
+  isAdmin: boolean;
 }
 
 export interface SessionSummary {

@@ -121,7 +121,9 @@ export function ReportScreen({
             <p className="label">Save your progress</p>
             <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
               Keep this report, see your score trend, and unlock the weak-spot drill. Just an
-              email or college ID — no password.
+              email or college ID — no password. If your college runs this, the placement
+              office can see your practice progress — it's how they plan support, never a
+              ranking.
             </p>
             <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
               <input
