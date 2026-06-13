@@ -204,12 +204,14 @@ select.field-input option {
   position: relative;
   max-width: none;
   margin: 0;
-  padding: var(--space-7) clamp(var(--space-5), 7vw, 6.5rem) 180px;
-  min-height: 100vh;
+  padding: var(--space-5) clamp(var(--space-4), 5vw, 4rem) 120px;
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: var(--space-5);
+  gap: var(--space-3);
 }
 
 /* Progress: the Beam crossing the top of the stage */
@@ -261,7 +263,7 @@ select.field-input option {
 
 .room-qnum {
   font-family: var(--font-display);
-  font-size: var(--fs-giant);
+  font-size: clamp(2rem, 5vh, 3.5rem);
   font-weight: 600;
   line-height: 0.9;
   color: transparent;
@@ -273,9 +275,11 @@ select.field-input option {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-6);
+  justify-content: center;
+  gap: var(--space-4);
   width: 100%;
-  padding-top: var(--space-4);
+  flex: 1 1 auto;
+  min-height: 0;
   /* Sit above the cinematic dim overlay so the orb + question are visible
      during the start beat instead of hidden behind it. */
   position: relative;
@@ -284,12 +288,12 @@ select.field-input option {
 
 .room-question {
   font-family: var(--font-display);
-  font-size: var(--fs-display);
+  font-size: clamp(1.5rem, 3.4vh + 0.8rem, var(--fs-display));
   font-weight: 500;
   text-align: center;
-  max-width: 24ch;
+  max-width: 26ch;
   margin: 0 auto;
-  line-height: 1.15;
+  line-height: 1.18;
   letter-spacing: -0.01em;
   /* luminous ink: white cooling into lavender toward the baseline */
   color: transparent;

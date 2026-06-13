@@ -14,8 +14,8 @@
 }
 
 .avatar-lg .avatar-stage {
-  width: 280px;
-  height: 280px;
+  width: clamp(170px, 22vh, 230px);
+  height: clamp(170px, 22vh, 230px);
 }
 
 /* Audio-reactive wrapper: scaled per-frame (transform only) from real sound */
