@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { InterviewerAvatar, type AvatarState } from '../components/InterviewerAvatar';
 import { LevelRing } from '../components/LevelRing';
 import { QuestionText } from '../components/QuestionText';
+import { VoiceWave } from '../components/VoiceWave';
 import {
   answerWithAudio,
   answerWithText,
@@ -56,8 +57,13 @@ export function InterviewRoom({ session, micWorks, resumed, onFinished }: Props)
   const sayPrompt = useCallback(async (text: string) => {
     setSpeechSeconds(null);
     setPhase('speaking');
-    await speak(text, (d) => setSpeechSeconds(d));
-    setPhase('ready');
+    try {
+      await speak(text, (d) => setSpeechSeconds(d));
+    } catch {
+      // TTS failed — reveal the question silently so the room stays usable.
+    } finally {
+      setPhase('ready');
+    }
   }, []);
 
   // Cinematic start beat: dimmed backdrop while the orb settles in and the
@@ -72,7 +78,9 @@ export function InterviewRoom({ session, micWorks, resumed, onFinished }: Props)
     if (startedRef.current) return;
     startedRef.current = true;
     if (!resumed) {
-      void speak(session.currentPrompt, (d) => setSpeechSeconds(d)).then(() => setPhase('ready'));
+      void speak(session.currentPrompt, (d) => setSpeechSeconds(d))
+        .catch(() => undefined)
+        .finally(() => setPhase('ready'));
     }
     return () => {
       stopSpeaking();
@@ -235,7 +243,6 @@ export function InterviewRoom({ session, micWorks, resumed, onFinished }: Props)
       </div>
 
       <div className="room-stage">
-        <QuestionText key={prompt} text={prompt} speechSeconds={speechSeconds} />
         <div
           className={`room-orb ${cinematic ? 'orb-arrive' : ''}`}
           key={`inhale-${questionIndex}-${isFollowUp}`}
@@ -246,7 +253,14 @@ export function InterviewRoom({ session, micWorks, resumed, onFinished }: Props)
             statusLabel={statusLabel}
             getLevel={avatarLevel}
           />
+          {phase === 'speaking' && avatarLevel && (
+            <VoiceWave read={avatarLevel} tone="asha" />
+          )}
+          {phase === 'recording' && micMeter && (
+            <VoiceWave read={micMeter.read} tone="student" />
+          )}
         </div>
+        <QuestionText key={prompt} text={prompt} speechSeconds={speechSeconds} />
       </div>
 
       <div className="transcript-live">
