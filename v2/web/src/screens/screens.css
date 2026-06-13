@@ -270,31 +270,24 @@ select.field-input option {
 }
 
 .room-stage {
-  display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(220px, 1fr);
-  gap: var(--space-6);
+  display: flex;
+  flex-direction: column;
   align-items: center;
+  gap: var(--space-5);
   width: 100%;
-}
-
-@media (max-width: 820px) {
-  .room-stage {
-    grid-template-columns: 1fr;
-  }
-
-  .room-stage .room-orb {
-    order: -1;
-    justify-self: center;
-  }
+  /* Sit above the cinematic dim overlay so the orb + question are visible
+     during the start beat instead of hidden behind it. */
+  position: relative;
+  z-index: 6;
 }
 
 .room-question {
   font-family: var(--font-display);
   font-size: var(--fs-display);
   font-weight: 500;
-  text-align: left;
+  text-align: center;
   max-width: 22ch;
-  margin: 0;
+  margin: 0 auto;
   line-height: 1.12;
   letter-spacing: -0.01em;
   /* luminous ink: white cooling into lavender toward the baseline */
@@ -305,7 +298,10 @@ select.field-input option {
 }
 
 .room-orb {
-  justify-self: end;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
   animation: orb-inhale 560ms var(--ease-in-out);
 }
 
@@ -313,6 +309,8 @@ select.field-input option {
   width: 100%;
   max-width: 620px;
   min-height: 72px;
+  margin: 0 auto;
+  text-align: center;
 }
 
 .transcript-card {
