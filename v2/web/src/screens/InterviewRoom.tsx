@@ -252,6 +252,7 @@ export function InterviewRoom({ session, micWorks, resumed, onFinished }: Props)
             name={name}
             statusLabel={statusLabel}
             getLevel={avatarLevel}
+            size="lg"
           />
           {phase === 'speaking' && avatarLevel && (
             <VoiceWave read={avatarLevel} tone="asha" />

@@ -204,7 +204,7 @@ select.field-input option {
   position: relative;
   max-width: none;
   margin: 0;
-  padding: var(--space-7) clamp(var(--space-5), 7vw, 6.5rem) 150px;
+  padding: var(--space-7) clamp(var(--space-5), 7vw, 6.5rem) 180px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -273,8 +273,9 @@ select.field-input option {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-5);
+  gap: var(--space-6);
   width: 100%;
+  padding-top: var(--space-4);
   /* Sit above the cinematic dim overlay so the orb + question are visible
      during the start beat instead of hidden behind it. */
   position: relative;
@@ -286,9 +287,9 @@ select.field-input option {
   font-size: var(--fs-display);
   font-weight: 500;
   text-align: center;
-  max-width: 22ch;
+  max-width: 24ch;
   margin: 0 auto;
-  line-height: 1.12;
+  line-height: 1.15;
   letter-spacing: -0.01em;
   /* luminous ink: white cooling into lavender toward the baseline */
   color: transparent;
@@ -301,16 +302,20 @@ select.field-input option {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
   animation: orb-inhale 560ms var(--ease-in-out);
 }
 
 .transcript-live {
   width: 100%;
   max-width: 620px;
-  min-height: 72px;
   margin: 0 auto;
   text-align: center;
+}
+
+.transcript-live:empty,
+.transcript-live > .transcript-empty:only-child {
+  min-height: 0;
 }
 
 .transcript-card {
@@ -319,10 +324,10 @@ select.field-input option {
 }
 
 .transcript-empty {
-  border-top: 1px solid var(--border);
   padding-top: var(--space-3);
   color: var(--text-muted);
   font-size: var(--fs-small);
+  text-align: center;
 }
 
 @keyframes transcript-in {
@@ -560,14 +565,11 @@ select.field-input option {
   }
 }
 
-/* Type-instead panel */
+/* Type-instead panel — inline in the stage flow so it can't collide with
+   the floating control-bar. */
 .type-panel {
-  position: fixed;
-  left: 50%;
-  bottom: 100px;
-  transform: translateX(-50%);
-  width: min(580px, calc(100vw - 2 * var(--space-5)));
-  z-index: 9;
+  width: min(580px, 100%);
+  margin: 0 auto;
   border-radius: var(--radius-md);
 }
 

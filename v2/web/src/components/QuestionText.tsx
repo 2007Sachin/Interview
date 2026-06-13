@@ -23,7 +23,9 @@ export function QuestionText({ text, speechSeconds }: Props) {
 
   useEffect(() => {
     if (speechSeconds !== null) return;
-    const t = window.setTimeout(() => setTimedOut(true), 2500);
+    // Short grace so the question shows up even when TTS is slow or unavailable.
+    // The parent keys this component by prompt text, so `timedOut` resets per question.
+    const t = window.setTimeout(() => setTimedOut(true), 700);
     return () => window.clearTimeout(t);
   }, [speechSeconds]);
 
